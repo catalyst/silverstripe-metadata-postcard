@@ -8,7 +8,7 @@ This module was created for and is used in the NIWA metadata postcards site.
 
 ### Requirements
 
- * SilverStripe Framework ^3.0
+ * SilverStripe Framework 3.x
 
 
 ### Installation
