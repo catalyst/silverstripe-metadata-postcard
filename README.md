@@ -9,12 +9,16 @@ This module was created for and is used in the NIWA metadata postcards site.
 ### Requirements
 
  * SilverStripe Framework 3.x
+ * fiendsofsilverstripe/backendmessages ^1.0
+ * unclecheese/display-logic ^1.5
 
 
 ### Installation
 
 Manual entry of this module in to your composer.json will be required with a VCS entry
 pointing to the Gitlab of where the repository for this module is located.
+
+Run composer install to ensure that the dependencies are downloaded.
 
 ### Usage
 
