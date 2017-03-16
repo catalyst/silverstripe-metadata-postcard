@@ -53,6 +53,7 @@ class MetadataPostcardEntryPage extends Page
                 TextField::create('CatalogueURL'),
                 TextField::create('CatalogueUsername'),
                 TextField::create('CataloguePassword'),        // Decided to use textfield to prevent issues with agressive Chome autofill.
+                NoticeMessage::create('Special variable in the success message is {LINK} which will display a link to the newly created record in the catalogue on the screen.'),
                 TextAreaField::create('PushSuccessMessage'),
                 NoticeMessage::create('Special variable in the failure message is {ERROR} which will display the technical error message on screen.'),
                 TextAreaField::create('PushFailureMessage')
@@ -288,7 +289,7 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
             //+ $this->EmailCurator($curator->Name, $curator->Email, $this->CuratorEmailSubject, $this->CuratorEmailBody, $newRecordLink);
         }
 
-        $apiError = true; //++ For testing.
+        $apiError = false; //++ For testing.
         $apiErrorMessage = "Out of cheese"; //++ For testing.
 
         // If the push was not successful, then we need to retain the user's input on the form i.e. re-display it with all fields re-populated.
@@ -309,8 +310,11 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
             // No error. Ensure that any form data in the session is cleared.
             Session::clear("FormData.{$form->getName()}.data");
 
-            // The the success message to that defined in the CMS.
-            $form->sessionMessage(nl2br($this->PushSuccessMessage), 'good', false);
+            // Get the success message replacing the link placeholder with a link to the newly created record.
+            $successMessage = nl2br(str_replace('{LINK}', "<a href='" . $newRecordLink . "' target='_blank'>" . $newRecordLink . "</a>", $this->PushSuccessMessage));
+
+            // Set the message in the session to this.
+            $form->sessionMessage($successMessage, 'good', false);
 
             // Return the user back to the form. The redirect back will take the user back to the form
             // with the original URL parameters which means the fields with parameters on the URL will be
