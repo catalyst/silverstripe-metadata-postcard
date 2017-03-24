@@ -16,6 +16,7 @@ class PostcardMetadataField extends DataObject
         'HelpText' => 'Text',
         'FieldType' => 'Enum(array("TEXTBOX", "TEXTAREA", "DROPDOWN", "PLACEHOLDER"))',
         'Readonly' => 'Boolean',
+        'Required' => 'Boolean',
         'PlaceholderValue' => 'Varchar(255)',
         'DropdownOtherOption' => 'Boolean',
         'SortOrder' => 'Int',
@@ -58,6 +59,7 @@ class PostcardMetadataField extends DataObject
             TextareaField::create('HelpText')
                 ->setRightTitle('The help text is optional.'),
             CheckboxField::create('Readonly', 'Readonly (if populated from URL)?'),
+            CheckboxField::create('Required', 'This field is required (the user must enter a value)?'),
             OptionsetField::create('FieldType', 'Field type', array(
                 'TEXTBOX' => 'Text box',
                 'TEXTAREA' => 'Text area',
