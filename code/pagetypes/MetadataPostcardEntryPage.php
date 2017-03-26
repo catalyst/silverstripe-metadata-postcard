@@ -134,12 +134,26 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
         // Create fieldfield for the form fields.
         $formFields = FieldList::create();
         $actions = FieldList::create();
+        $requiredFields = array();
+
+        // Push the required fields message as a literal field at the top.
+        $formFields->push(
+            LiteralField::create('required', '<p>* Required fields</p>')
+        );
 
         if ($metadataFields->count()) {
             foreach($metadataFields as $field) {
                 // Create a version of the label with spaces replaced with underscores as that is how
                 // any paraemters in the URL will come (plus we can use it for the field name)
                 $fieldName = str_replace(' ', '_', $field->Label);
+                $fieldLabel = $field->Label;
+
+                // If the field is required then add it to the required fields and also add an
+                // asterix to the end of the field label.
+                if ($field->Required) {
+                    $requiredFields[] = $fieldName;
+                    $fieldLabel .= ' *';
+                }
 
                 // Check if there is a parameter in the GET vars with the corresponding name.
                 $fieldValue = null;
@@ -155,11 +169,11 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
                 // Single line text field creation.
                 if ($field->FieldType == 'TEXTBOX') {
                     $formFields->push(
-                        $newField = TextField::create($fieldName, $field->Label)
+                        $newField = TextField::create($fieldName, $fieldLabel)
                     );
                 } else if ($field->FieldType == 'TEXTAREA') {
                     $formFields->push(
-                        $newField = TextareaField::create($fieldName, $field->Label)
+                        $newField = TextareaField::create($fieldName, $fieldLabel)
                     );
                 } else if ($field->FieldType == 'DROPDOWN') {
                     // Some dropdowns have an 'other' option so must add the 'other' to the entries
@@ -173,7 +187,7 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
                     $formFields->push(
                         $newField = DropdownField::create(
                             $fieldName,
-                            $field->Label,
+                            $fieldLabel,
                             $entries
                         )->setEmptyString('Select')
                     );
@@ -185,6 +199,11 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
                                 "Please specify the 'other'"
                             )->hideUnless($fieldName)->isEqualTo("other")->end()
                         );
+
+                        //++ @TODO
+                        // Ideally if the dropdown is required then if other is selected the other field
+                        // should also be required. Unfortunatley the conditional validation logic of ZEN
+                        // does not work in the front end - so need to figure out how to do this.
                     }
                 }
 
@@ -219,8 +238,12 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
         //++ @TODO sort any field validations, required fields etc.
         //++ Might be some conditional validation with dropdown 'other' fields.
 
+        // Set up the required fields validation.
+        $validator = ZenValidator::create();
+        $validator->addRequiredFields($requiredFields);
+
         // Create form.
-        $form = Form::create($this, 'MetadataEntryForm', $formFields, $actions);
+        $form = Form::create($this, 'MetadataEntryForm', $formFields, $actions, $validator);
 
         // Check if the data for the form has been saved in the session, if so then populate
         // the form with this data, if not then just return the default form.
