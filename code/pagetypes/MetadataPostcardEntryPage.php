@@ -235,9 +235,6 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
             );
         }
 
-        //++ @TODO sort any field validations, required fields etc.
-        //++ Might be some conditional validation with dropdown 'other' fields.
-
         // Set up the required fields validation.
         $validator = ZenValidator::create();
         $validator->addRequiredFields($requiredFields);
@@ -301,8 +298,8 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
         //++ Interperate response and get the URL ID of the new URL
         //++ Get curators and then loop and create messages to them.
 
-
-        $newRecordLink = "http://dougtesting.net"; //++ just for testing.
+        //++ just for testing to give different looking URL each time.
+        $newRecordLink = $this->CatalogueURL . date('YmdHis');
 
         // Get the curators specified for this page and then loop and call function to send them
         // an email to notify that a new entry has been created in the catalogue.
@@ -339,6 +336,11 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
             // Set the message in the session to this.
             $form->sessionMessage($successMessage, 'good', false);
 
+            // Also add the link to the newly created record to an array in the session so we can display these on the form.
+            $createdRecords = Session::get('PostcardRecordsCreated');
+            $createdRecords[] = $newRecordLink;
+            Session::set('PostcardRecordsCreated', $createdRecords);
+
             // Return the user back to the form. The redirect back will take the user back to the form
             // with the original URL parameters which means the fields with parameters on the URL will be
             // populated again like they want.
@@ -371,5 +373,27 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
             // Just send plain email, no need for a fancy template.
             $email->sendPlain();
         }
+    }
+
+    /**
+     * Returns a list of previously created metadata postcard records from the session
+     * these are output on the page so the user can see a history of records they have added this session.
+     *
+     * @return ArrayList
+     */
+    public function PreviouslyCreatedRecords()
+    {
+        $createdRecords = new ArrayList();
+        $records = Session::get('PostcardRecordsCreated');
+
+        if ($records) {
+            foreach($records as $record) {
+                $createdRecords->push(ArrayData::create(
+                    array('Link' => $record)
+                ));
+            }
+        }
+
+        return $createdRecords;
     }
 }

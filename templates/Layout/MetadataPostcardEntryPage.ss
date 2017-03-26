@@ -4,6 +4,17 @@
         <div id="main" role="main">
             <h1 class="page-header">$Title</h1>
             $Content.RichLinks
+            <% if $PreviouslyCreatedRecords %>
+                <div>
+                    Records added this session...<br />
+                    <ul>
+                        <% loop $PreviouslyCreatedRecords %>
+                            <li><a href="$Link" target="_blank">$Link</a></li>
+                        <% end_loop %>
+                    </ul>
+                </div>
+                <br />
+            <% end_if %>
             $MetadataEntryForm
             <% include RelatedPages %>
             $CommentsForm
