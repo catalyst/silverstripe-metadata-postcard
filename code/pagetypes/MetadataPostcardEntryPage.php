@@ -379,7 +379,6 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
      * @param String $subject       The subject of the email.
      * @param String $body          The body of the emal.
      * @param String $newRecordLink URL ID of the newly created record in the Catalogue.
-     * @param String $newRecordLink URL ID of the newly created record in the Catalogue.
      * @param String $additionalMessageEmail Email entered on the form of who the message is from.
      * @param String $additionalMessageText Message entered by the user on the form.
      */
