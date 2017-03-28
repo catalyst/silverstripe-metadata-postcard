@@ -235,6 +235,24 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
             );
         }
 
+        // Add fields to the bottom of the form for the user to include a message in the email sent to curators
+        // this is entirely optional and will not be used in most cases so is hidden until a checkbox is ticked.
+        $formFields->push(
+            CheckboxField::create('AdditionalMessage', 'Include a message from me to the curators')
+        );
+
+        $formFields->push(
+            EmailField::create('AdditionalMessageEmail', 'My email address')
+                ->setRightTitle('Please enter your email address so the curator knows who the message below is from.')
+                ->hideUnless('AdditionalMessage')->isChecked()->end()
+        );
+
+        $formFields->push(
+            TextareaField::create('AdditionalMessageText', 'My message')
+                ->setRightTitle('You can enter a message here which is appended to the email sent the curator after the record has successfully been pushed to the catalogue.')
+                ->hideUnless('AdditionalMessage')->isChecked()->end()
+        );
+
         // Set up the required fields validation.
         $validator = ZenValidator::create();
         $validator->addRequiredFields($requiredFields);
@@ -301,12 +319,18 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
         //++ just for testing to give different looking URL each time.
         $newRecordLink = $this->CatalogueURL . date('YmdHis');
 
-        // Get the curators specified for this page and then loop and call function to send them
-        // an email to notify that a new entry has been created in the catalogue.
-        //++ @TODO only send if the push was successful to the catalogue.
+        // See if the AdditionalMessage checkbox is ticked, if so then get the value of the email user address
+        // and User email message fields as this needs to be included in the email to the curator.
+        $additionalMessageEmail = null;
+        $additionalMessageText = null;
+
+        if (!empty($data['AdditionalMessage'])) {
+            $additionalMessageEmail = $data['AdditionalMessageEmail'];
+            $additionalMessageText = $data['AdditionalMessageText'];
+        }
+
         foreach($this->Curators() as $curator) {
-            //++ disabled for now as does not really work from dev machine (grey listing etc)
-            //+ $this->EmailCurator($curator->Name, $curator->Email, $this->CuratorEmailSubject, $this->CuratorEmailBody, $newRecordLink);
+            $this->EmailCurator($curator->Name, $curator->Email, $this->CuratorEmailSubject, $this->CuratorEmailBody, $newRecordLink, $additionalMessageEmail, $additionalMessageText);
         }
 
         $apiError = false; //++ For testing.
@@ -355,13 +379,25 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
      * @param String $subject       The subject of the email.
      * @param String $body          The body of the emal.
      * @param String $newRecordLink URL ID of the newly created record in the Catalogue.
+     * @param String $additionalMessageEmail Email entered on the form of who the message is from.
+     * @param String $additionalMessageText Message entered by the user on the form.
      */
-    protected function EmailCurator($name, $emailAddress, $subject, $body, $newRecordLink)
+    protected function EmailCurator($name, $emailAddress, $subject, $body, $newRecordLink, $additionalMessageEmail, $additionalMessageText)
     {
         if ($name && $emailAddress && $subject && $body && $newRecordLink) {
             // Check for special variables of {NAME} and {LINK} in the body and replace with
             // the name of the curator and the postcardID link.
             $body = str_replace(array('{NAME}', '{LINK}'), array($name, $newRecordLink), $body);
+
+            // If the user wants to include an additional message to the curator then add this in after the main body.
+            if ($additionalMessageEmail || $additionalMessageText) {
+                // Alter the subject to include plus message from {email}
+                // Add the email and message to the body.
+                $subject .= " PLUS message from " . $additionalMessageEmail;
+                $body .= "\n\n----------------------------------------------------\n" .
+                         "Message from " . $additionalMessageEmail . "...\n\n" .
+                         $additionalMessageText;
+            }
 
             $email = new Email(
                 $this->FromEmailAddress,
