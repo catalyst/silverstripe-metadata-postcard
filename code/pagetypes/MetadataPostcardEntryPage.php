@@ -17,7 +17,9 @@ class MetadataPostcardEntryPage extends Page
      * @var array
      */
     private static $db = array(
-        'CatalogueURL' => 'Varchar(255)',
+        'CatalogueBaseURL' => 'Varchar(255)',   // Base url
+        'PushUrlPart' => 'Varchar(255)',        // Added to the base url this will allow records to be pushed.
+        'ViewRecordPart' => 'Varchar(255)',     // Added to the case url this will allow records to be viewed.
         'CatalogueUsername' => 'Varchar(255)',
         'CataloguePassword' => 'Varchar(255)',
         'FromEmailAddress' => 'Varchar(255)',
@@ -50,7 +52,12 @@ class MetadataPostcardEntryPage extends Page
         $fields->addFieldsToTab(
             'Root.Catalogue',
             array(
-                TextField::create('CatalogueURL'),
+                TextField::create('CatalogueBaseURL')
+                    ->setRightTitle('The base URL to the catalogue'),
+                TextField::create('PushUrlPart')
+                    ->setRightTitle('URL parts when added to the base URL will allow pushing of records, for example /srv/eng/csw-publication'),
+                TextField::create('ViewRecordPart')
+                    ->setRightTitle('URL parts when added to the base URL will allow new records to be viewed, for example /srv/eng/catalog.search#/metadata/'),
                 TextField::create('CatalogueUsername'),
                 TextField::create('CataloguePassword'),        // Decided to use textfield to prevent issues with agressive Chome autofill.
                 NoticeMessage::create('Special variable in the success message is {LINK} which will display a link to the newly created record in the catalogue on the screen.'),
@@ -291,50 +298,36 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
                     // field for it and pop that in the API params instead of the value selected in the dropdown.
                     if ($field->DropdownOtherOption && $data[$fieldName] == 'other') {
                         if (isset($data["${fieldName}_other"])) {
-                            $apiParams[$field->ApiName] = trim($data["${fieldName}_other"]);
+                            $apiParams[$field->XmlName] = trim($data["${fieldName}_other"]);
                         } else {
-                            $apiParams[$field->ApiName] = trim($data[$fieldName]);
+                            $apiParams[$field->XmlName] = trim($data[$fieldName]);
                         }
                     } else {
-                        $apiParams[$field->ApiName] = trim($data[$fieldName]);
+                        $apiParams[$field->XmlName] = trim($data[$fieldName]);
                     }
                 }
             } else {
                 // If it is placeholder then add it along with the admin defined placeholder value to the API params.
-                $apiParams[$field->ApiName] = $field->PlaceholderValue;
+                $apiParams[$field->XmlName] = $field->PlaceholderValue;
             }
         }
 
-        //++ @TODO For testing will be removed in future ticket where the catalogue integration is done.
-        /*
-        echo "<pre>";
-        print_r($apiParams);
-        exit();
-        */
+        // Create an object of the MetadataPushAPI type sending the needed info to the constructor and then call the
+        // execute command passing the apiParams. We need to try/catch it as it will throw and exception if there is
+        // an issue or return the identifer of the newly created record if successful.
+        $api = new MetadataPushApi($this->CatalogueBaseURL, $this->PushUrlPart, $this->CatalogueUsername, $this->CataloguePassword);
+        $apiError = false;
+        $apiErrorMessage = "";
+        $newRecordId = "";
 
-        //++ @TODO Do post to the catalogue
-        //++ Interperate response and get the URL ID of the new URL
-        //++ Get curators and then loop and create messages to them.
-
-        //++ just for testing to give different looking URL each time.
-        $newRecordLink = $this->CatalogueURL . date('YmdHis');
-
-        // See if the AdditionalMessage checkbox is ticked, if so then get the value of the email user address
-        // and User email message fields as this needs to be included in the email to the curator.
-        $additionalMessageEmail = null;
-        $additionalMessageText = null;
-
-        if (!empty($data['AdditionalMessage'])) {
-            $additionalMessageEmail = $data['AdditionalMessageEmail'];
-            $additionalMessageText = $data['AdditionalMessageText'];
+        try {
+            $newRecordId = $api->execute($apiParams);
         }
 
-        foreach($this->Curators() as $curator) {
-            $this->EmailCurator($curator->Name, $curator->Email, $this->CuratorEmailSubject, $this->CuratorEmailBody, $newRecordLink, $additionalMessageEmail, $additionalMessageText);
+        catch (Exception $exception) {
+            $apiError = true;
+            $apiErrorMessage = $exception->getMessage();
         }
-
-        $apiError = false; //++ For testing.
-        $apiErrorMessage = "Out of cheese"; //++ For testing.
 
         // If the push was not successful, then we need to retain the user's input on the form i.e. re-display it with all fields re-populated.
         if ($apiError) {
@@ -351,7 +344,25 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
             // Return the user back to the form page they just posted.
             return $this->redirectBack();
         } else {
-            // No error. Ensure that any form data in the session is cleared.
+            // No error, build link to view the new record which is displayed on the page and also included in the email.
+            $newRecordLink = $this->CatalogueBaseURL . $this->ViewRecordPart . $newRecordId;
+
+            // See if the AdditionalMessage checkbox is ticked, if so then get the value of the email user address
+            // and User email message fields as this needs to be included in the email to the curator.
+            $additionalMessageEmail = null;
+            $additionalMessageText = null;
+
+            if (!empty($data['AdditionalMessage'])) {
+                $additionalMessageEmail = $data['AdditionalMessageEmail'];
+                $additionalMessageText = $data['AdditionalMessageText'];
+            }
+
+            // Email the curators.
+            foreach($this->Curators() as $curator) {
+                $this->EmailCurator($curator->Name, $curator->Email, $this->CuratorEmailSubject, $this->CuratorEmailBody, $newRecordLink, $additionalMessageEmail, $additionalMessageText);
+            }
+
+            // Ensure that any form data in the session is cleared.
             Session::clear("FormData.{$form->getName()}.data");
 
             // Get the success message replacing the link placeholder with a link to the newly created record.

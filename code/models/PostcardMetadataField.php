@@ -11,7 +11,7 @@ class PostcardMetadataField extends DataObject
      * @var array
      */
     private static $db = array(
-        'ApiName' => 'Varchar(255)',
+        'XmlName' => 'Varchar(255)',
         'Label' => 'Varchar(255)',
         'HelpText' => 'Text',
         'FieldType' => 'Enum(array("TEXTBOX", "TEXTAREA", "DROPDOWN", "PLACEHOLDER"))',
@@ -40,7 +40,7 @@ class PostcardMetadataField extends DataObject
      * @var array
      */
     private static $summary_fields = array(
-        'ApiName',
+        'XmlName',
         'Label',
         'FieldType',
     );
@@ -52,8 +52,8 @@ class PostcardMetadataField extends DataObject
     {
         // Add fields needed to enter the information about the metdata field.
         $fields = new FieldList(
-            WarningMessage::create('The Api name must be set to the name of the field in the catalogue.'),
-            TextField::create('ApiName'),
+            WarningMessage::create('The XML name must be set to the name of this field in the XML sent to the catalogue and include the correct prefix (for example dc: for Dublin core fields)'),
+            TextField::create('XmlName'),
             $fieldLabel = TextField::create('Label')
                 ->setRightTitle('The label is required for non-placeholder fields. The label name, with underscores instead of spaces, is also used to pass values to fields from the URL parameters.'),
             TextareaField::create('HelpText')
@@ -122,7 +122,7 @@ class PostcardMetadataField extends DataObject
 
         $validator->addRequiredFields(
             array(
-                'ApiName',
+                'XmlName',
                 'Label',
                 'FieldType',
                 'PlaceholderValue',
