@@ -24,6 +24,8 @@ class MetadataPostcardEntryPage extends Page
         'FromEmailAddress' => 'Varchar(255)',
         'CuratorEmailSubject' => 'Varchar(255)',
         'CuratorEmailBody' => 'Text',
+        'CoordinatorEmailSubject' => 'Varchar(255)',
+        'CoordinatorEmailBody' => 'Text',
         'PushSuccessMessage' => 'Text',
         'PushFailureMessage' => 'Text',
     );
@@ -57,6 +59,8 @@ class MetadataPostcardEntryPage extends Page
                     ->setRightTitle('URL to view records in a catalogue. The identifier of new records will be added to the end.'),
                 TextField::create('CatalogueUsername'),
                 TextField::create('CataloguePassword'),        // Decided to use textfield to prevent issues with agressive Chome autofill.
+                EmailField::create('FromEmailAddress')
+                    ->setRightTitle('This is the address that email messages from this system appear to be from. It should include the domain of this website.'),
                 NoticeMessage::create('Special variable in the success message is {LINK} which will display a link to the newly created record in the catalogue on the screen.'),
                 TextAreaField::create('PushSuccessMessage'),
                 NoticeMessage::create('Special variable in the failure message is {ERROR} which will display the technical error message on screen.'),
@@ -64,12 +68,22 @@ class MetadataPostcardEntryPage extends Page
             )
         );
 
+        $fields->addFieldsToTab(
+            'Root.ProjectCoordinator',
+            array(
+                LiteralField::create('CoordinatorNote', "<p><strong>One email is sent to the project coordinator after the first record in a user's session has been pushed to the catalogue, provided that Project_Coordinator, Project_Coordinator_email, Project_Manager, and Project_Number parameters are sent in the URL to this page. If any of these parameters are not provided no email will be sent to the project coordinator.</strong></p>"),
+                NoticeMessage::create("Special variable is {PROJECT_NUMBER} which will be replaced with the project number when the email is sent."),
+                TextField::create('CoordinatorEmailSubject'),
+                NoticeMessage::create("Special variables are {PROJECT_COORDINATOR} (name), {PROJECT_MANAGER} (name), and {PROJECT_NUMBER} which will be replaced when the email is sent."),
+                TextAreaField::create('CoordinatorEmailBody')->setRows(10)
+            )
+        );
+
         // Next a tab for the curator information
         $fields->addFieldsToTab(
             'Root.Curators',
             array(
-                EmailField::create('FromEmailAddress')
-                    ->setRightTitle('This is the email address the messages to curators appears to be from. It should include the domain of this website.'),
+                LiteralField::create('CuratorNote', "<p><strong>An email is sent to the curators listed below every time a record is pushed to the catalogue.</strong></p>"),
                 TextField::create('CuratorEmailSubject'),
                 NoticeMessage::create("Special variables are {NAME} which will be replaced with the curator's name and {LINK} which will be replaced with a link to the new entry in the catalogue when the email is sent."),
                 TextAreaField::create('CuratorEmailBody')->setRows(10),
@@ -164,6 +178,28 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
     public function MetadataEntryForm()
     {
         $params = $this->getRequest()->getVars();
+
+        // Check in the parameters sent to this page if there are certian fields needed to power the
+        // functionality which emails project coordinators and if so get them as we will need to add
+        // them to the bottom of the form as hidden fields, this way we can access them in the form
+        // processing and send the email.
+        $hiddenFields = array();
+
+        if (!empty($params['Project_Coordinator'])) {
+            $hiddenFields['_Project_Coordinator'] = $params['Project_Coordinator'];
+        }
+
+        if (!empty($params['Project_Coordinator_email'])) {
+            $hiddenFields['_Project_Coordinator_email'] = $params['Project_Coordinator_email'];
+        }
+
+        if (!empty($params['Project_Manager'])) {
+            $hiddenFields['_Project_Manager'] = $params['Project_Manager'];
+        }
+
+        if (!empty($params['Project_Number'])) {
+            $hiddenFields['_Project_Number'] = $params['Project_Number'];
+        }
 
         // Get the fields defined for this page, exclude the placeholder fields as they are not displayed to the user.
         $metadataFields = $this->Fields()->where("FieldType != 'PLACEHOLDER'")->Sort('SortOrder', 'asc');
@@ -264,6 +300,33 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
                 }
             }
 
+            // Add fields to the bottom of the form for the user to include a message in the email sent to curators
+            // this is entirely optional and will not be used in most cases so is hidden until a checkbox is ticked.
+            $formFields->push(
+                CheckboxField::create('AdditionalMessage', 'Include a message from me to the curators')
+            );
+
+            $formFields->push(
+                EmailField::create('AdditionalMessageEmail', 'My email address')
+                    ->setRightTitle('Please enter your email address so the curator knows who the message below is from.')
+                    ->hideUnless('AdditionalMessage')->isChecked()->end()
+            );
+
+            $formFields->push(
+                TextareaField::create('AdditionalMessageText', 'My message')
+                    ->setRightTitle('You can enter a message here which is appended to the email sent the curator after the record has successfully been pushed to the catalogue.')
+                    ->hideUnless('AdditionalMessage')->isChecked()->end()
+            );
+
+            // If there are any hidden fields then loop though and add them as hidden fields to the bottom of the form.
+            if ($hiddenFields) {
+                foreach($hiddenFields as $key => $val) {
+                    $formFields->push(
+                        HiddenField::create($key, '', $val)
+                    );
+                }
+            }
+
             // We have at least one field so set the action for the form to submit the entry to the catalogue.
             $actions = FieldList::create(FormAction::create('sendMetadataForm', 'Send'));
         } else {
@@ -271,24 +334,6 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
                 ErrorMessage::create('No metadata entry fields have been specified for this page.')
             );
         }
-
-        // Add fields to the bottom of the form for the user to include a message in the email sent to curators
-        // this is entirely optional and will not be used in most cases so is hidden until a checkbox is ticked.
-        $formFields->push(
-            CheckboxField::create('AdditionalMessage', 'Include a message from me to the curators')
-        );
-
-        $formFields->push(
-            EmailField::create('AdditionalMessageEmail', 'My email address')
-                ->setRightTitle('Please enter your email address so the curator knows who the message below is from.')
-                ->hideUnless('AdditionalMessage')->isChecked()->end()
-        );
-
-        $formFields->push(
-            TextareaField::create('AdditionalMessageText', 'My message')
-                ->setRightTitle('You can enter a message here which is appended to the email sent the curator after the record has successfully been pushed to the catalogue.')
-                ->hideUnless('AdditionalMessage')->isChecked()->end()
-        );
 
         // Set up the required fields validation.
         $validator = ZenValidator::create();
@@ -354,9 +399,8 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
             $newRecordId = $api->execute($apiParams);
         }
 
-        catch (Exception $exception) {
-            $apiError = true;
-            $apiErrorMessage = $exception->getMessage();
+        foreach($this->Curators() as $curator) {
+            $this->EmailCurator($curator->Name, $curator->Email, $this->CuratorEmailSubject, $this->CuratorEmailBody, $newRecordLink, $additionalMessageEmail, $additionalMessageText);
         }
 
         // If the push was not successful, then we need to retain the user's input on the form i.e. re-display it with all fields re-populated.
@@ -403,6 +447,14 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
 
             // Also add the link to the newly created record to an array in the session so we can display these on the form.
             $createdRecords = Session::get('PostcardRecordsCreated');
+
+            // If there are no records already in the current session then call function to check for the hidden fields on
+            // the form which provide the information required to email a project coordinator, and if they exist sent an email.
+            if (count($createdRecords) == 0) {
+                $this->EmailCoordinator($data);
+            }
+
+            // Add the new reocrd to the created records array and then set back in the session.
             $createdRecords[] = $newRecordLink;
             Session::set('PostcardRecordsCreated', $createdRecords);
 
@@ -443,6 +495,42 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
             $email = new Email(
                 $this->FromEmailAddress,
                 $emailAddress,
+                $subject,
+                $body
+            );
+
+            // Just send plain email, no need for a fancy template.
+            $email->sendPlain();
+        }
+    }
+
+    /**
+     * Checks if hidden fields exist on the form which contain information to email a project co-ordinator.
+     * If so then it gets the coordinator subject and body, parses special variables and then sends the email.
+     *
+     * @param Array $data the posted form data.
+     */
+    protected function EmailCoordinator($data)
+    {
+        $projectNumber = !empty($data['_Project_Number']) ? $data['_Project_Number'] : '';
+        $projectCoordinator = !empty($data['_Project_Coordinator']) ? $data['_Project_Coordinator'] : '';
+        $projectCoordinatorEmail = !empty($data['_Project_Coordinator_email']) ? $data['_Project_Coordinator_email'] : '';
+        $projectManager = !empty($data['_Project_Manager']) ? $data['_Project_Manager'] : '';
+
+        // Ensure have all these parameters, if not then we cannot send an email. This if fine as some organisations may not want to do this.
+        if ($projectNumber && $projectCoordinator && $projectCoordinatorEmail && $projectManager) {
+            // Parse special variables in the email subject and body.
+            $subject = str_replace('{PROJECT_NUMBER}', $projectNumber, $this->CoordinatorEmailSubject);
+            $body = str_replace(
+                    array('{PROJECT_NUMBER}', '{PROJECT_COORDINATOR}', '{PROJECT_MANAGER}'),
+                    array($projectNumber, $projectCoordinator, $projectManager),
+                    $this->CoordinatorEmailBody
+            );
+
+            // Send the email.
+            $email = new Email(
+                $this->FromEmailAddress,
+                $projectCoordinatorEmail,
                 $subject,
                 $body
             );
