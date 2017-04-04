@@ -17,9 +17,8 @@ class MetadataPostcardEntryPage extends Page
      * @var array
      */
     private static $db = array(
-        'CatalogueBaseURL' => 'Varchar(255)',   // Base url
-        'PushUrlPart' => 'Varchar(255)',        // Added to the base url this will allow records to be pushed.
-        'ViewRecordPart' => 'Varchar(255)',     // Added to the case url this will allow records to be viewed.
+        'CataloguePushUrl' => 'Varchar(255)',
+        'CatalogueViewUrl' => 'Varchar(255)',
         'CatalogueUsername' => 'Varchar(255)',
         'CataloguePassword' => 'Varchar(255)',
         'FromEmailAddress' => 'Varchar(255)',
@@ -52,12 +51,10 @@ class MetadataPostcardEntryPage extends Page
         $fields->addFieldsToTab(
             'Root.Catalogue',
             array(
-                TextField::create('CatalogueBaseURL')
-                    ->setRightTitle('The base URL to the catalogue'),
-                TextField::create('PushUrlPart')
-                    ->setRightTitle('URL parts when added to the base URL will allow pushing of records, for example /srv/eng/csw-publication'),
-                TextField::create('ViewRecordPart')
-                    ->setRightTitle('URL parts when added to the base URL will allow new records to be viewed, for example /srv/eng/catalog.search#/metadata/'),
+                TextField::create('CataloguePushUrl')
+                    ->setRightTitle('URL that will allow pushing of records in to the catalogue using a CSW transaction.'),
+                TextField::create('CatalogueViewUrl')
+                    ->setRightTitle('URL to view records in a catalogue. The identifier of new records will be added to the end.'),
                 TextField::create('CatalogueUsername'),
                 TextField::create('CataloguePassword'),        // Decided to use textfield to prevent issues with agressive Chome autofill.
                 NoticeMessage::create('Special variable in the success message is {LINK} which will display a link to the newly created record in the catalogue on the screen.'),
@@ -109,6 +106,39 @@ class MetadataPostcardEntryPage extends Page
         );
 
         return $fields;
+    }
+
+    /**
+     * Ensure that the catalogue URL parts have any whitespace around them stripped to avoid
+     * weird and unhelpful error that comes back from catalogue if there is a space in it.
+     */
+    protected function onBeforeWrite()
+    {
+        parent::onBeforeWrite();
+
+        $this->CataloguePushUrl = trim($this->CataloguePushUrl);
+        $this->CatalogueViewUrl = trim($this->CatalogueViewUrl);
+
+        // Also ensure that the view URL has a / on the end.
+        $this->CatalogueViewUrl = rtrim($this->CatalogueViewUrl, '/') . '/';
+    }
+
+    /**
+     * @return ZenValidator
+     */
+    public function getCMSValidator()
+    {
+        $validator = ZenValidator::create();
+
+        $validator->addRequiredFields(
+            array(
+                'CataloguePushUrl',
+                'CatalogueViewUrl',
+                'FromEmailAddress',
+            )
+        );
+
+        return $validator;
     }
 }
 
@@ -315,7 +345,7 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
         // Create an object of the MetadataPushAPI type sending the needed info to the constructor and then call the
         // execute command passing the apiParams. We need to try/catch it as it will throw and exception if there is
         // an issue or return the identifer of the newly created record if successful.
-        $api = new MetadataPushApi($this->CatalogueBaseURL, $this->PushUrlPart, $this->CatalogueUsername, $this->CataloguePassword);
+        $api = new MetadataPushApi($this->CataloguePushUrl, $this->CatalogueUsername, $this->CataloguePassword);
         $apiError = false;
         $apiErrorMessage = "";
         $newRecordId = "";
@@ -345,7 +375,7 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
             return $this->redirectBack();
         } else {
             // No error, build link to view the new record which is displayed on the page and also included in the email.
-            $newRecordLink = $this->CatalogueBaseURL . $this->ViewRecordPart . $newRecordId;
+            $newRecordLink = $this->CatalogueViewUrl . $newRecordId;
 
             // See if the AdditionalMessage checkbox is ticked, if so then get the value of the email user address
             // and User email message fields as this needs to be included in the email to the curator.

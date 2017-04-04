@@ -16,11 +16,10 @@ class MetadataPushApi
     /**
      * Constructor.
      */
-    public function __construct($catalogueBaseURL, $pushUrlPart, $catalogueUsername, $cataloguePassword)
+    public function __construct($cataloguePushUrl, $catalogueUsername, $cataloguePassword)
     {
-        // Put together the URL required to push records.
-        if ($catalogueBaseURL && $pushUrlPart) {
-            $this->cataloguePushUrl = $catalogueBaseURL . $pushUrlPart;
+        if ($cataloguePushUrl) {
+            $this->cataloguePushUrl = $cataloguePushUrl;
         }
 
         // If a user name and password has been supplied then add basic auth.
