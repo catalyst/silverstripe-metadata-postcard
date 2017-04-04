@@ -399,8 +399,9 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
             $newRecordId = $api->execute($apiParams);
         }
 
-        foreach($this->Curators() as $curator) {
-            $this->EmailCurator($curator->Name, $curator->Email, $this->CuratorEmailSubject, $this->CuratorEmailBody, $newRecordLink, $additionalMessageEmail, $additionalMessageText);
+        catch (Exception $exception) {
+            $apiError = true;
+            $apiErrorMessage = $exception->getMessage();
         }
 
         // If the push was not successful, then we need to retain the user's input on the form i.e. re-display it with all fields re-populated.
