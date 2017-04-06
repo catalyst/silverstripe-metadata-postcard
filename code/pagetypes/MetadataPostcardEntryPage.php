@@ -306,11 +306,17 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
                 CheckboxField::create('AdditionalMessage', 'Include a message from me to the curators')
             );
 
+            // For the email address, because its project managers filling out the form, check if the Project_Manager_email
+            // has been specified in the URL params and if so pre-populate the field with that value.
             $formFields->push(
-                EmailField::create('AdditionalMessageEmail', 'My email address')
+                $emailField = EmailField::create('AdditionalMessageEmail', 'My email address')
                     ->setRightTitle('Please enter your email address so the curator knows who the message below is from.')
                     ->hideUnless('AdditionalMessage')->isChecked()->end()
             );
+
+            if (isset($params['Project_Manager_email'])) {
+                $emailField->setValue($params['Project_Manager_email']);
+            }
 
             $formFields->push(
                 TextareaField::create('AdditionalMessageText', 'My message')
