@@ -45,6 +45,14 @@ class MetadataPostcardEntryPage extends Page
     {
         $fields = parent::getCMSFields();
 
+        // Remove a whole lot of tabs we don't need for this page type as we add a whole lot of our
+        // own so the list gets very long making things more complex for users.
+        $fields->removeByName('Translations');
+        $fields->removeByName('PublishingSchedule');
+        $fields->removeByName('Widgets');
+        $fields->removeByName('RelatedPages');
+        $fields->removeByName('Tags');
+
         // Add tab for catalogue information such as the url, username and password.
         // Text field is used for the password to overcome issues with Chrome's very agreesive autofill
         // which can populate the values of the username and password field to that of the logged in admin
