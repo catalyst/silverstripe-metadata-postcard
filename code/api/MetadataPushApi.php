@@ -92,7 +92,7 @@ class MetadataPushApi
         }
 
         if (!isset($identifier)) {
-            throw new Exception('Identifier for the new record not found. The must have been an error trying to add the record to the catalogue.');
+            throw new Exception('Identifier for the new record not found. No record must have been created.');
         }
 
         // Return the identifier of the new record.
