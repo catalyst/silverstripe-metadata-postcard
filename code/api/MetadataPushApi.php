@@ -50,7 +50,7 @@ class MetadataPushApi
         $data = '<?xml version="1.0" encoding="UTF-8"?>' . "\n" .
                 '<csw:Transaction xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" version="2.0.2" service="CSW">' . "\n" .
                 '<csw:Insert>' . "\n" .
-                '<gmd:MD_Metadata xmlns:gts="http://www.isotc211.org/2005/gts" xmlns:gml="http://www.opengis.net/gml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:gco="http://www.isotc211.org/2005/gco" xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:dc="http://purl.org/dc/elements/1.1/">' . "\n";
+                '<simpledc xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dct="http://purl.org/dc/terms/" xmlns:geonet="http://www.fao.org/geonetwork" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="xml/schemas/dublin-core/schema.xsd">' . "\n";
 
         // Now loop though all the form fields passed in and add them to the XML. The fields should be an assosiative array
         // of xmlnames and values. The dc: prefix should be included in the xmlname for the field.
@@ -62,7 +62,7 @@ class MetadataPushApi
         }
 
         // Close the XML insert.
-        $data .= '</gmd:MD_Metadata>' . "\n" .
+        $data .= '</simpledc>' . "\n" .
                  '</csw:Insert>' . "\n" .
                  '</csw:Transaction>';
 
@@ -71,8 +71,6 @@ class MetadataPushApi
 
         // We expect a status code of 200 for the insert/getrecords and getrecordsbyid requests.
         if ($httpStatus != 200) {
-            //++ @TODO might want to check for 404 bad request and some others that could come back from the catalogue
-            //++ do give better granularity to the user in terms of the reason for the failure.
             throw new Exception('The catalogue responsed with the following HTTP code: ' . $httpStatus . ' - ' . $curlError);
         }
 
@@ -89,12 +87,12 @@ class MetadataPushApi
         $xpath = new DOMXPath($doc);
         $idList = $xpath->query('//csw:InsertResult/csw:BriefRecord/identifier');
 
-        if ($idList->length > 0) {
+        if (($idList) && ($idList->length > 0)) {
             $identifier = $idList->item(0)->nodeValue;
         }
 
         if (!isset($identifier)) {
-            throw new Exception('Identifier for the new record not found.');
+            throw new Exception('Identifier for the new record not found. The must have been an error trying to add the record to the catalogue.');
         }
 
         // Return the identifier of the new record.
