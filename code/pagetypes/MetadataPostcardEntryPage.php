@@ -127,7 +127,68 @@ class MetadataPostcardEntryPage extends Page
             )
         );
 
+        // Add another tab to assist a CMS user with knowing the correct URL to the page with field parameters.
+        // After the creation of the form fields the user can select which fields are to have parameters sent via the URL
+        // and specify the value, then when this tab is saved the URL encoded link to the form is displayed.
+        $urlWithParams = $this->calculateUrlWithParams();
+
+        //++ @TODO investigate better ways to do this, for example having the JS in a file. If not then tidyup.
+        //++ Perhaps create the whole thing as one block of HTML rather than multiple liternal fields.
+        //++ THIS is a good start, but what about project manager fields which are not form fields.
+        //++ Also this system does not allow the user to make a URL of their choosing without altering the fields to set the URL param value.
+        //++ Why not use + rahter than %20 as it looks tidier, why did I say %20 is needed can I do back on that now??
+        $fields->addFieldsToTab(
+            'Root.PageURL',
+            array(
+                NoticeMessage::create('Once you have set up the Metadata fields for this page, the url for this page including the fields to have URL parameters will be displayed here.<br />You can test the URL by clicking the "Test the URL" link. Click "Copy URL to Clipbaord" to copy the entire URL to your clipboard.'),
+                LiteralField::create('TestLink', "<p><a href='$urlWithParams' target='_blank'>Test the URL</a></p>"),
+                LiteralField::create('PageUrl', "<input type='text' id='pageUrl' style='width:99%;padding:5px;' readonly value='" . $urlWithParams . "'><br /><br />"),
+                LiteralField::create('CopyButton', "<input type='button' id='copyButton' value='Copy URL to clipboard'>
+                <script>document.querySelector('#copyButton').onclick = function() {
+                        document.querySelector('#pageUrl').select();
+                        document.execCommand('copy');
+                        document.querySelector('#pageUrl').blur();
+                        alert('The URL has been copied to the clipboard, use Ctl-V (or Cmd-V on Mac) to paste it where desired.');
+                    };
+                </script><br /><br />")
+            )
+        );
+
         return $fields;
+    }
+
+    /**
+     * Calculates the URL to the page containing parameters for the form fields which have been specified as
+     * needing values passed via the URL. This helps when the CMS user wants to copy and paste the URL in to
+     * an email to others, or display on the screen etc. Often a 3rd party system should create the paramertised URL.
+     *
+     * @return String
+     */
+    protected function calculateUrlWithParams()
+    {
+        // Get the absolute URL to the page including the site domain.
+        // Get all the Metadata fields for this page which have a URLParameter specified.
+        // Loop and add the fields to the URL as parameters, replacing spaces in the field names with underscores
+        // Also URL encode the field values.
+        $pageUrl = $this->AbsoluteLink();
+        $parameters = "";
+
+        $parameterFields = $this->Fields()->where("URLParameterValue IS NOT NULL")->sort('SortOrder', 'Asc');
+
+        foreach($parameterFields as $field) {
+            $parameters .= '&' . str_replace(' ', '_', $field->Label) . '=' . rawurlencode($field->URLParameterValue);
+        }
+
+        // Remove first & and replace with ?.
+        $parameters = ltrim($parameters, '&');
+
+        // Put together the URL of the page with the params.
+        $pageUrl .= '?' . $parameters;
+
+        //++ @TODO Need to sort how the project manager fields which are not fields on the form get added to the URL.
+        //++ the user might might need to enter on this page, so we have to store them for the purpose of URL building?
+
+        return $pageUrl;
     }
 
     /**
