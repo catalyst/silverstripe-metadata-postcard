@@ -28,6 +28,10 @@ class MetadataPostcardEntryPage extends Page
         'CoordinatorEmailBody' => 'Text',
         'PushSuccessMessage' => 'Text',
         'PushFailureMessage' => 'Text',
+        'ProjectNumber' => 'Varchar(255)',          // These fields are only used for the URL builder
+        'ProjectManager' => 'Varchar(255)',         // and are not fields on the form so need a value captured somewhere.
+        'ProjectCoordinator' => 'Varchar(255)',
+        'ProjectCoordinatorEmail' => 'Varchar(255)',
     );
 
     /**
@@ -36,6 +40,7 @@ class MetadataPostcardEntryPage extends Page
     private static $has_many = array(
         'Fields' => 'PostcardMetadataField',
         'Curators' => 'CatalogueCurator',
+        'UrlParams' => 'UrlParameter',
     );
 
     /**
@@ -132,16 +137,25 @@ class MetadataPostcardEntryPage extends Page
         // and specify the value, then when this tab is saved the URL encoded link to the form is displayed.
         $urlWithParams = $this->calculateUrlWithParams();
 
-        //++ @TODO investigate better ways to do this, for example having the JS in a file. If not then tidyup.
-        //++ Perhaps create the whole thing as one block of HTML rather than multiple liternal fields.
-        //++ THIS is a good start, but what about project manager fields which are not form fields.
-        //++ Also this system does not allow the user to make a URL of their choosing without altering the fields to set the URL param value.
-        //++ Why not use + rahter than %20 as it looks tidier, why did I say %20 is needed can I do back on that now??
         $fields->addFieldsToTab(
-            'Root.PageURL',
+            'Root.PageUrlParameters',
             array(
-                NoticeMessage::create('Once you have set up the Metadata fields for this page, the url for this page including the fields to have URL parameters will be displayed here.<br />You can test the URL by clicking the "Test the URL" link. Click "Copy URL to Clipbaord" to copy the entire URL to your clipboard.'),
-                LiteralField::create('TestLink', "<p><a href='$urlWithParams' target='_blank'>Test the URL</a></p>"),
+                LiteralField::create('UrlInstructions', "<p><strong>Only use this tab after for have specified the fields on the form. The purpose of this tab is to help you create a parameterised url to the page.</strong></p>"),
+                NoticeMessage::create('1) Because these parameters are not fields on the form, please enter their URL parameter values here.'),
+                TextField::create('ProjectNumber'),
+                TextField::create('ProjectManager'),
+                TextField::create('ProjectCoordinator'),
+                TextField::create('ProjectCoordinatorEmail'),
+                NoticeMessage::create('2) Next use this gridfield below to add other form fields you want to have parameters in the URL.'),
+                GridField::create(
+                    'UrlParams',
+                    'Parameters',
+                    $this->UrlParams(),
+                    GridFieldConfig_RecordEditor::create()
+                        ->removeComponentsByType('GridFieldAddExistingAutocompleter')
+                        ->addComponent(new GridFieldOrderableRows('SortOrder'))
+                ),
+                NoticeMessage::create('3) The correct URL to the page with field parameters will be displayed below once the information above has been entered and saved.'),
                 LiteralField::create('PageUrl', "<input type='text' id='pageUrl' style='width:99%;padding:5px;' readonly value='" . $urlWithParams . "'><br /><br />"),
                 LiteralField::create('CopyButton', "<input type='button' id='copyButton' value='Copy URL to clipboard'>
                 <script>document.querySelector('#copyButton').onclick = function() {
@@ -150,7 +164,8 @@ class MetadataPostcardEntryPage extends Page
                         document.querySelector('#pageUrl').blur();
                         alert('The URL has been copied to the clipboard, use Ctl-V (or Cmd-V on Mac) to paste it where desired.');
                     };
-                </script><br /><br />")
+                </script>&nbsp;&nbsp;&nbsp;&nbsp;"),
+                LiteralField::create('TestLink', "<a href='$urlWithParams' target='_blank'>Test the URL</a>"),
             )
         );
 
@@ -167,16 +182,35 @@ class MetadataPostcardEntryPage extends Page
     protected function calculateUrlWithParams()
     {
         // Get the absolute URL to the page including the site domain.
-        // Get all the Metadata fields for this page which have a URLParameter specified.
-        // Loop and add the fields to the URL as parameters, replacing spaces in the field names with underscores
-        // Also URL encode the field values.
+        // Get the Url parameter records for this page.
+        // Also include the project coordinator field values in the URL parameters.
         $pageUrl = $this->AbsoluteLink();
+
         $parameters = "";
 
-        $parameterFields = $this->Fields()->where("URLParameterValue IS NOT NULL")->sort('SortOrder', 'Asc');
+        // If values for the project number, Project Manager, Project Coordinator, or Project Coordinator
+        // email fields have been specified include them as parameters in the URL.
+        if ($this->ProjectNumber) {
+            $parameters .= '&Project_Number=' . urlencode($this->ProjectNumber);
+        }
+
+        if ($this->ProjectManager) {
+            $parameters .= '&Project_Manager=' . urlencode($this->ProjectManager);
+        }
+
+        if ($this->ProjectCoordinator) {
+            $parameters .= '&Project_Coordinator=' . urlencode($this->ProjectCoordinator);
+        }
+
+        if ($this->ProjectCoordinatorEmail) {
+            $parameters .= '&Project_Coordinator_email=' . urlencode($this->ProjectCoordinatorEmail);
+        }
+
+        // Get the URL parameters specified for this page. Loop and add them.
+        $parameterFields = $this->UrlParams()->sort('SortOrder', 'Asc');
 
         foreach($parameterFields as $field) {
-            $parameters .= '&' . str_replace(' ', '_', $field->Label) . '=' . rawurlencode($field->URLParameterValue);
+            $parameters .= '&' . str_replace(' ', '_', $field->PostcardMetadataField()->Label) . '=' . urlencode($field->Value);
         }
 
         // Remove first & and replace with ?.
@@ -184,9 +218,6 @@ class MetadataPostcardEntryPage extends Page
 
         // Put together the URL of the page with the params.
         $pageUrl .= '?' . $parameters;
-
-        //++ @TODO Need to sort how the project manager fields which are not fields on the form get added to the URL.
-        //++ the user might might need to enter on this page, so we have to store them for the purpose of URL building?
 
         return $pageUrl;
     }

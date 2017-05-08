@@ -20,7 +20,6 @@ class PostcardMetadataField extends DataObject
         'PlaceholderValue' => 'Varchar(255)',
         'DropdownOtherOption' => 'Boolean',
         'SortOrder' => 'Int',
-        'URLParameterValue' => 'Varchar(255)'
     );
 
     /**
@@ -69,11 +68,7 @@ class PostcardMetadataField extends DataObject
             ), 'TEXTBOX'),
             $dropdownOther = CheckboxField::create('DropdownOtherOption', "Dropdown has 'Other' option"),
             $placeholderValue = TextField::create('PlaceholderValue')
-                ->setRightTitle('Placeholder fields are not displayed to the user, but are sent to the Catalogue so require you to enter a value.'),
-            //++ @TODO.
-            //++ But there are those parameters not fields on the form, the project manager email etc so this won't fully work.
-            NoticeMessage::create('//++ Explain this feature, only need to enter if want URL param for this field.'),
-            TextField::create('URLParameterValue')
+                ->setRightTitle('Placeholder fields are not displayed to the user, but are sent to the Catalogue so require you to enter a value.')
         );
 
         // Define the display logic for fields that don't show all the time.
