@@ -30,7 +30,7 @@ class MetadataPostcardEntryPage extends Page
         'PushFailureMessage' => 'Text',
         'HelpBoxTitle' => 'Varchar(255)',
         'HelpBoxMessage' => 'HTMLText',
-	'ProjectNumber' => 'Varchar(255)',          // These fields are only used for the URL builder
+	    'ProjectNumber' => 'Varchar(255)',          // These fields are only used for the URL builder
         'ProjectManager' => 'Varchar(255)',         // and are not fields on the form so need a value captured somewhere.
         'ProjectCoordinator' => 'Varchar(255)',
         'ProjectCoordinatorEmail' => 'Varchar(255)',
