@@ -28,6 +28,8 @@ class MetadataPostcardEntryPage extends Page
         'CoordinatorEmailBody' => 'Text',
         'PushSuccessMessage' => 'Text',
         'PushFailureMessage' => 'Text',
+        'HelpBoxTitle' => 'Varchar(255)',
+        'HelpBoxMessage' => 'HTMLText',
     );
 
     /**
@@ -52,6 +54,16 @@ class MetadataPostcardEntryPage extends Page
         $fields->removeByName('Widgets');
         $fields->removeByName('RelatedPages');
         $fields->removeByName('Tags');
+
+        // Add a tab for the help box displayed on the right of the page.
+        $fields->addFieldsToTab(
+            'Root.HelpBox',
+            array(
+                LiteralField::create('HelpBoxInstructions', '<p><strong>If you would like a box displayed to the top right of the page with help information, then please fill out the fields below. The curator email address(es) will automatically be output after the message.</strong></p>'),
+                TextField::create('HelpBoxTitle'),
+                HtmlEditorField::create('HelpBoxMessage')
+            )
+        );
 
         // Add tab for catalogue information such as the url, username and password.
         // Text field is used for the password to overcome issues with Chrome's very agreesive autofill
