@@ -38,8 +38,9 @@ class UrlParameter extends DataObject
     {
         $fields = parent::getCMSFields();
 
-        // Remove the sort order as this is hidden.
+        // Remove the sort order as this is hidden, also remove the postcard page id field since the user does not need to see it.
         $fields->removeByName('SortOrder');
+        $fields->removeByName('MetadataPostcardEntryPageID');
 
         // Remove the Postcard metadata field dropdown and replace it with our own which must have
         // only the fields which appear on the metadata page this is linked to.
