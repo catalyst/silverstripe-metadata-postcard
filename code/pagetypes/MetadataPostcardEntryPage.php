@@ -353,13 +353,17 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
 
                 // Single line text field creation.
                 if ($field->FieldType == 'TEXTBOX') {
-                    $formFields->push(
-                        $newField = TextField::create($fieldName, $fieldLabel)
-                    );
+                    $formFields->push($newField = TextField::create($fieldName, $fieldLabel));
                 } else if ($field->FieldType == 'TEXTAREA') {
-                    $formFields->push(
-                        $newField = TextareaField::create($fieldName, $fieldLabel)
-                    );
+                    $formFields->push($newField = TextareaField::create($fieldName, $fieldLabel));
+                } else if ($field->FieldType == 'KEYWORDS') {
+                    // If keywords then output 2 fields the textbox for the keywords and then also a
+                    // literal read only list of those already specified by the admin below.
+                    $formFields->push($newField = TextAreaField::create($fieldName, $fieldLabel));
+                    $formFields->push(LiteralField::create(
+                        $fieldName . '_adminKeywords',
+                        "<div class='control-group' style='margin-top: -12px'>Already specified : " . $field->KeywordsValue . "</div>"
+                    ));
                 } else if ($field->FieldType == 'DROPDOWN') {
                     // Some dropdowns have an 'other' option so must add the 'other' to the entries
                     // and also have a conditionally displayed text field for when other is chosen.
@@ -474,12 +478,13 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
      */
     public function sendMetadataForm($data, $form)
     {
-        // Specify array for the params to send to the API.
+        // Specify array for the params to send to the API. Can't be associative and keyed by the xmlname
+        // as the Dublin core specification allows for multiple of the same field.
         $apiParams = array();
 
         // Loop through the defined fields grabbing the POSTed data for it, or if a placeholder
         // then just adding it and the specified value to the apiParams.
-        foreach($this->Fields() as $field) {
+        foreach($this->Fields()->sort('SortOrder', 'asc') as $field) {
             // Like when the fields are looped through to create the form, str_replace the label to create the fieldname.
             $fieldName = str_replace(' ', '_', $field->Label);
 
@@ -491,17 +496,37 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
                     // field for it and pop that in the API params instead of the value selected in the dropdown.
                     if ($field->DropdownOtherOption && $data[$fieldName] == 'other') {
                         if (isset($data["${fieldName}_other"])) {
-                            $apiParams[$field->XmlName] = trim($data["${fieldName}_other"]);
+                            $apiParams[] = array('xmlname' => $field->XmlName, 'value' => trim($data["${fieldName}_other"]));
                         } else {
-                            $apiParams[$field->XmlName] = trim($data[$fieldName]);
+                            $apiParams[] = array('xmlname' => $field->XmlName, 'value' => trim($data[$fieldName]));
                         }
                     } else {
-                        $apiParams[$field->XmlName] = trim($data[$fieldName]);
+                        // Check if the field is a Keywords field. If so we need to append the string "Keywords: "
+                        // along with the keywords the admin specified to those entered by the user.
+                        if ($field->FieldType == 'KEYWORDS') {
+                            $keywordsString = 'Keywords: ';
+
+                            // If the admin entered some keywords (which is optional) add with one comma afterwards.
+                            if (trim($field->KeywordsValue)) {
+                                $keywordsString .= rtrim(trim($field->KeywordsValue), ',') . ', ';
+                            }
+
+                            // If the user entered some keywords then also add these on.
+                            if (trim($data[$fieldName])) {
+                                $keywordsString .= trim($data[$fieldName]);
+                            }
+
+                            // Finally set the keywords for the parameter to send to the catalogue.
+                            $apiParams[] = array('xmlname' => $field->XmlName, 'value' => $keywordsString);
+                        } else {
+                            // Else if regular field then just add its value to the params keyed by the XMLName.
+                            $apiParams[] = array('xmlname' => $field->XmlName, 'value' => trim($data[$fieldName]));
+                        }
                     }
                 }
             } else {
                 // If it is placeholder then add it along with the admin defined placeholder value to the API params.
-                $apiParams[$field->XmlName] = $field->PlaceholderValue;
+                $apiParams[] = array('xmlname' => $field->XmlName, 'value' => $field->PlaceholderValue);
             }
         }
 

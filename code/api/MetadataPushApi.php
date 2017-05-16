@@ -54,11 +54,10 @@ class MetadataPushApi
 
         // Now loop though all the form fields passed in and add them to the XML. The fields should be an assosiative array
         // of xmlnames and values. The dc: prefix should be included in the xmlname for the field.
-        foreach($fields as $key => $value) {
-            //++ @TODO check if its correct for ISO field names to be lower case as well?
+        foreach($fields as $field) {
             // Dublin core field names should all be lower case so ensure this.
             // Also encode the value to ensure that any less or greater than symbols do not break the XML.
-            $data .= '<' . strtolower($key) . '>' . htmlspecialchars($value) . '</' . strtolower($key) . '>' . "\n";
+            $data .= '<' . strtolower($field['xmlname']) . '>' . htmlspecialchars($field['value']) . '</' . strtolower($field['xmlname']) . '>' . "\n";
         }
 
         // Close the XML insert.
