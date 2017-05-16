@@ -11,7 +11,6 @@ class PostcardMetadataField extends DataObject
      * @var array
      */
     private static $db = array(
-        'XmlName' => 'Varchar(255)',
         'Label' => 'Varchar(255)',
         'HelpText' => 'Text',
         'FieldType' => 'Enum(array("TEXTBOX", "TEXTAREA", "DROPDOWN", "PLACEHOLDER"))',
@@ -27,6 +26,7 @@ class PostcardMetadataField extends DataObject
      */
     private static $has_one = array(
         'MetadataPostcardEntryPage' => 'MetadataPostcardEntryPage',
+        'DublinCoreFieldType' => 'DublinCoreFieldType',
     );
 
     /**
@@ -40,7 +40,7 @@ class PostcardMetadataField extends DataObject
      * @var array
      */
     private static $summary_fields = array(
-        'XmlName',
+        'DublinCoreField' => 'DublinCoreFieldType.Label',
         'Label',
         'FieldType',
     );
@@ -52,8 +52,11 @@ class PostcardMetadataField extends DataObject
     {
         // Add fields needed to enter the information about the metdata field.
         $fields = new FieldList(
-            WarningMessage::create('The XML name must be set to the name of this field in the XML sent to the catalogue and include the correct prefix (for example dc: for Dublin core fields)'),
-            TextField::create('XmlName'),
+            DropdownField::create(
+                'DublinCoreFieldTypeID',
+                'Dublin Core Field',
+                DublinCoreFieldType::get()->sort('Label', 'Asc')->map('ID', 'Label')
+            ),
             $fieldLabel = TextField::create('Label')
                 ->setRightTitle('The label is required for non-placeholder fields. The label name, with underscores instead of spaces, is also used to pass values to fields from the URL parameters.'),
             TextareaField::create('HelpText')
@@ -122,7 +125,7 @@ class PostcardMetadataField extends DataObject
 
         $validator->addRequiredFields(
             array(
-                'XmlName',
+                'DublinCoreFieldTypeID',
                 'Label',
                 'FieldType',
                 'PlaceholderValue',

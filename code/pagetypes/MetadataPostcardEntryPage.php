@@ -491,17 +491,17 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
                     // field for it and pop that in the API params instead of the value selected in the dropdown.
                     if ($field->DropdownOtherOption && $data[$fieldName] == 'other') {
                         if (isset($data["${fieldName}_other"])) {
-                            $apiParams[$field->XmlName] = trim($data["${fieldName}_other"]);
+                            $apiParams[$field->DublinCoreFieldType()->XmlName] = trim($data["${fieldName}_other"]);
                         } else {
-                            $apiParams[$field->XmlName] = trim($data[$fieldName]);
+                            $apiParams[$field->DublinCoreFieldType()->XmlName] = trim($data[$fieldName]);
                         }
                     } else {
-                        $apiParams[$field->XmlName] = trim($data[$fieldName]);
+                        $apiParams[$field->DublinCoreFieldType()->XmlName] = trim($data[$fieldName]);
                     }
                 }
             } else {
                 // If it is placeholder then add it along with the admin defined placeholder value to the API params.
-                $apiParams[$field->XmlName] = $field->PlaceholderValue;
+                $apiParams[$field->DublinCoreFieldType()->XmlName] = $field->PlaceholderValue;
             }
         }
 
