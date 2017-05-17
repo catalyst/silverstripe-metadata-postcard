@@ -13,10 +13,11 @@ class PostcardMetadataField extends DataObject
     private static $db = array(
         'Label' => 'Varchar(255)',
         'HelpText' => 'Text',
-        'FieldType' => 'Enum(array("TEXTBOX", "TEXTAREA", "DROPDOWN", "PLACEHOLDER"))',
+        'FieldType' => 'Enum(array("TEXTBOX", "TEXTAREA", "DROPDOWN", "PLACEHOLDER", "KEYWORDS"))',
         'Readonly' => 'Boolean',
         'Required' => 'Boolean',
         'PlaceholderValue' => 'Varchar(255)',
+        'KeywordsValue' => 'Varchar(255)',
         'DropdownOtherOption' => 'Boolean',
         'SortOrder' => 'Int',
     );
@@ -67,23 +68,27 @@ class PostcardMetadataField extends DataObject
                 'TEXTBOX' => 'Text box',
                 'TEXTAREA' => 'Text area',
                 'DROPDOWN' => 'Dropdown',
-                'PLACEHOLDER' => 'Placeholder'
+                'PLACEHOLDER' => 'Placeholder',
+                'KEYWORDS' => 'Keywords'
             ), 'TEXTBOX'),
             $dropdownOther = CheckboxField::create('DropdownOtherOption', "Dropdown has 'Other' option"),
             $placeholderValue = TextField::create('PlaceholderValue')
-                ->setRightTitle('Placeholder fields are not displayed to the user, but are sent to the Catalogue so require you to enter a value.')
+                ->setRightTitle('Placeholder fields are not displayed to the user, but are sent to the Catalogue so require you to enter a value.'),
+            $keywordsValue = TextField::create('KeywordsValue', 'Your Keywords')
         );
 
         // Define the display logic for fields that don't show all the time.
         $placeholderValue->hideUnless('FieldType')->isEqualTo('PLACEHOLDER');
         $placeholderValue->validateIf('FieldType')->isEqualTo('PLACEHOLDER');
         $dropdownOther->hideUnless('FieldType')->isEqualTo('DROPDOWN');
+        $keywordsValue->hideUnless('FieldType')->isEqualTo('KEYWORDS');
 
         // The label is very important if the field is not a placeholder as we need to display a label to the user
         // and the label is turned in to the name of the field when output on the form as well as being populated via URL.
         $fieldLabel->validateIf('FieldType')->isEqualTo('TEXTBOX')
                    ->orIf('FieldType')->isEqualTo('TEXTAREA')
-                   ->orIf('FieldType')->isEqualTo('DROPDOWN');
+                   ->orIf('FieldType')->isEqualTo('DROPDOWN')
+                   ->orIf('FieldType')->isEqualTo('KEYWORDS');
 
         // Now output things for the dropdown values.
         if ($this->ID) {
