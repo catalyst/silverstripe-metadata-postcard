@@ -496,9 +496,9 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
                     // field for it and pop that in the API params instead of the value selected in the dropdown.
                     if ($field->DropdownOtherOption && $data[$fieldName] == 'other') {
                         if (isset($data["${fieldName}_other"])) {
-                            $apiParams[] = array('xmlname' => $field->XmlName, 'value' => trim($data["${fieldName}_other"]));
+                            $apiParams[] = array('xmlname' => $field->DublinCoreFieldType()->XmlName, 'value' => trim($data["${fieldName}_other"]));
                         } else {
-                            $apiParams[] = array('xmlname' => $field->XmlName, 'value' => trim($data[$fieldName]));
+                            $apiParams[] = array('xmlname' => $field->DublinCoreFieldType()->XmlName, 'value' => trim($data[$fieldName]));
                         }
                     } else {
                         // Check if the field is a Keywords field. If so we need to append the string "Keywords: "
@@ -517,16 +517,16 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
                             }
 
                             // Finally set the keywords for the parameter to send to the catalogue.
-                            $apiParams[] = array('xmlname' => $field->XmlName, 'value' => $keywordsString);
+                            $apiParams[] = array('xmlname' => $field->DublinCoreFieldType()->XmlName, 'value' => $keywordsString);
                         } else {
                             // Else if regular field then just add its value to the params keyed by the XMLName.
-                            $apiParams[] = array('xmlname' => $field->XmlName, 'value' => trim($data[$fieldName]));
+                            $apiParams[] = array('xmlname' => $field->DublinCoreFieldType()->XmlName, 'value' => trim($data[$fieldName]));
                         }
                     }
                 }
             } else {
                 // If it is placeholder then add it along with the admin defined placeholder value to the API params.
-                $apiParams[] = array('xmlname' => $field->XmlName, 'value' => $field->PlaceholderValue);
+                $apiParams[] = array('xmlname' => $field->DublinCoreFieldType()->XmlName, 'value' => $field->PlaceholderValue);
             }
         }
 
