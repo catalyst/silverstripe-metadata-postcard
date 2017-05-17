@@ -87,10 +87,10 @@ class DublinCoreFieldType extends DataObject
             $existing = DublinCoreFieldType::get()->filter('XmlName', $key)->first();
 
             if (!$existing) {
-                $icon = new self();
-                $icon->XmlName = $key; // This field is effectively the Unique key for this table.
-                $icon->Label = $value;
-                $icon->write();
+                $type = new self();
+                $type->XmlName = $key; // This field is effectively the Unique key for this table.
+                $type->Label = $value;
+                $type->write();
 
                 DB::alteration_message(' - ' . $value . ' added.');
             } elseif ($existing->Label != $value) {
