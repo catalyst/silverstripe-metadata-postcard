@@ -112,6 +112,20 @@ class PostcardMetadataField extends DataObject
                     )
                 )->hideUnless('FieldType')->isEqualTo('DROPDOWN')->end()
             );
+
+            // If this field type is a dropdown, and it has a VocabUrl, and there is a VocabMessage then display
+            // a backend message of the correct type (good, bad) to the user and populate it with the message.
+            if ($this->FieldType == 'DROPDOWN' && $this->DropdownVocabularyUrl) {
+                $msg = LastVocabLoadMessage::get()->where(array('PostcardMetadataFieldID = ?' => $this->ID))->first();
+
+                if ($msg) {
+                    if ($msg->Type == 'BAD') {
+                        $fields->addFieldToTab('Root.Main', ErrorMessage::create($msg->Date . ' : ' . $msg->Message));
+                    } else {
+                        $fields->addFieldToTab('Root.Main', NoticeMessage::create($msg->Date . ' : ' . $msg->Message));
+                    }
+                }
+            }
         } else {
             $fields->addFieldToTab('Root.Main',
                 DisplayLogicWrapper::create(
@@ -165,37 +179,77 @@ class PostcardMetadataField extends DataObject
         // If the type of this field is dropdown and a vocabularly url has been specified.
         if ($this->FieldType == 'DROPDOWN' && $this->DropdownVocabularyUrl)
         {
-            $this->populateDropdownFromVocab();
+            $errorMessage = $this->populateDropdownFromVocab();
+
+            // If there was an error mesaaqge then set a bad message, if not then all must have been ok and set a good one.
+            if ($errorMessage) {
+                $this->setLastVocabMessage('BAD', $errorMessage);
+            } else {
+                $this->setLastVocabMessage('GOOD', 'Items successfully loaded from the vocabulary server.');
+            }
         }
     }
 
     /**
-     * Makes a web request to the vocab server, processes the response and populates
-     * the dropdown items for this field from the items returned in the response.
+     * Sets the last vocab message.
+     * @param String $status  GOOD OR BAD.
+     * @param String $message The message set.
      */
-    protected function populateDropdownFromVocab($nextUrl="", $sortOrder=1)
+    protected function setLastVocabMessage($status, $message)
+    {
+        $msg = LastVocabLoadMessage::get()->where(array('PostcardMetadataFieldID = ?' => $this->ID))->first();
+
+        if (!$msg) {
+            $msg = LastVocabLoadMessage::create();
+            $msg->PostcardMetadataFieldID = $this->ID;
+        }
+
+        $msg->Date = Date('Y-m-d H:i');
+        $msg->Type = $status;
+        $msg->Message = $message;
+        $msg->Write();
+    }
+
+    /**
+     * Populates the item for a dropdown. Can be called recursivley.
+     * @param  string  $nextUrl
+     * @param  integer $sortOrder
+     */
+    protected function populateDropdownFromVocab($nextUrl="", $sortOrder=1, $errorMessage="")
     {
         // This function is called recursively because the vocab data is paginated.
         // The first time the nextUrl is empty so the base url to the vocab server is used and some parameters added.
         // If in the response there is a next URL then we call this function again passing that in to load the next page of data.
         $results = null;
         $status = 0;
-        $errorMessage = "";
+        $statusMessage = "";
 
         if ($nextUrl) {
-            list($results, $status, $errorMessage) = $this->makeCurlRequest($nextUrl);
+            list($results, $status, $statusMessage) = $this->makeCurlRequest($nextUrl);
         } else {
             // Delete all current entries for this dropdown as we are going to re-populate the list from the vocab.
-            $this->deleteCurrentItems();
+            $deleteResult = $this->deleteCurrentItems();
 
-            // Add parameters to sort the results by label and get the maximum allowed number of records (50) per request.
-            list($results, $status, $errorMessage) = $this->makeCurlRequest($this->DropdownVocabularyUrl . '?_sort=prefLabel&_pageSize=50');
+            // If there was an error deleting then throw exception as don't want to double-up the entries.
+            if (!$deleteResult) {
+                $errorMessage .= "Error deleting current items, can't reload. ";
+            } else {
+                // Add parameters to sort the results by label and get the maximum allowed number of records (50) per request.
+                list($results, $status, $statusMessage) = $this->makeCurlRequest($this->DropdownVocabularyUrl . '?_sort=prefLabel&_pageSize=50');
+            }
         }
 
         // If no error then process the output
         if ($status == 200 && $results) {
             // Parse the XML.
-            $xml = new SimpleXMLElement($results);
+            $xml = "";
+
+            try {
+                $xml = new SimpleXMLElement($results);
+            }
+            catch (Exception $e) {
+                $errorMessage .= 'The XML failed to parse. ';
+            }
 
             if ($xml) {
                 // If have some measurements.
@@ -203,7 +257,7 @@ class PostcardMetadataField extends DataObject
                     // Loop through the items.
                     foreach($xml->items->item as $anItem) {
                         // Get the prefLabel which is the label to sell.
-                        if ($anItem->prefLabel) {
+                        if (isset($anItem->prefLabel)) {
                             // Create a dropdown entry object, set its properties, and then write.
                             $dropdownEntry = DropdownEntry::create();
                             $dropdownEntry->PostcardMetadataFieldID = $this->ID;
@@ -218,21 +272,20 @@ class PostcardMetadataField extends DataObject
                     // Now check for a 'next' tag in the results, if there is then there is more than 1
                     // page of results so we need to get that link then recursivley call this function
                     if (isset($xml->next)) {
-                        $this->populateDropdownFromVocab($xml->next['href'], $sortOrder);
+                        $errorMessage .= $this->populateDropdownFromVocab($xml->next['href'], $sortOrder, $errorMessage);
                     }
                 } else {
-                    throw new Exception('No items found in XML');
+                    $errorMessage .= "No items found in the XML so can't populate the dropdown items. ";
                 }
             } else {
-                if (isset($xml->Error)) {
-                    throw new Exception('XML parsing issue : ' . $xml->Error);
-                } else {
-                    throw new Exception('The XML did not parse.');
-                }
+                $errorMessage .= 'No XML to process. ';
             }
         } else {
-            throw new Exception('Error getting data from the vocab server. ' . $status . ' : ' . $errorMessage);
+            $errorMessage .= 'Error getting data from the vocab server. ' . $status . ' : ' . $statusMessage . '. ';
         }
+
+        // Ensure that the error message is
+        return $errorMessage;
     }
 
     /**
@@ -245,6 +298,8 @@ class PostcardMetadataField extends DataObject
         $sql->addWhere(array('PostcardMetadataFieldID' => $this->ID));
         $sql->setDelete(true);
         $result = $sql->execute();
+
+        return $result;
     }
 
     /**
@@ -261,14 +316,6 @@ class PostcardMetadataField extends DataObject
 
         // create curl resource
         $ch = curl_init();
-
-        // Check to see if there is a ? in the url already. If so then & the parameters on, if not the first one needs a ?.
-        // The parameters we add ensure the results are sorted by the label and that we get the maximum allowed of 50 back per request.
-        if (strpos($url, '?')) {
-            $url .= '&_sort=prefLabel&_pageSize=50';
-        } else {
-            $url .= '?_sort=prefLabel&_pageSize=50';
-        }
 
         // Set url.
         curl_setopt($ch, CURLOPT_URL, $url);
