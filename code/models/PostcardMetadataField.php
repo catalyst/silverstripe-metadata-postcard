@@ -192,6 +192,7 @@ class PostcardMetadataField extends DataObject
 
     /**
      * Sets the last vocab message.
+     * 
      * @param String $status  GOOD OR BAD.
      * @param String $message The message set.
      */
@@ -204,7 +205,7 @@ class PostcardMetadataField extends DataObject
             $msg->PostcardMetadataFieldID = $this->ID;
         }
 
-        $msg->Date = Date('Y-m-d H:i');
+        $msg->Date = Date('Y-m-d');
         $msg->Type = $status;
         $msg->Message = $message;
         $msg->Write();
@@ -212,8 +213,10 @@ class PostcardMetadataField extends DataObject
 
     /**
      * Populates the item for a dropdown. Can be called recursivley.
-     * @param  string  $nextUrl
+     *
+     * @param  String  $nextUrl
      * @param  integer $sortOrder
+     * @param  String $errorMessage
      */
     protected function populateDropdownFromVocab($nextUrl="", $sortOrder=1, $errorMessage="")
     {
