@@ -20,6 +20,7 @@ class PostcardMetadataField extends DataObject
         'KeywordsValue' => 'Varchar(255)',
         'DropdownOtherOption' => 'Boolean',
         'DropdownVocabularyUrl' => 'Varchar(255)',
+        'PreventDropdownItemUpdate' => 'Boolean',
         'SortOrder' => 'Int',
     );
 
@@ -77,6 +78,7 @@ class PostcardMetadataField extends DataObject
             $dropdownOther = CheckboxField::create('DropdownOtherOption', "Dropdown has 'Other' option"),
             $dropdownVocab = TextField::create('DropdownVocabularyUrl', 'Dropdown Vocabulary Url (to XML)')
                 ->setRightTitle('If specified, on save the items for this dropdown will be populated from the vocabulary. Note this can take some time, please be patient while the screen re-loads. To update the items from the vocabulary, simply save this field again.'),
+            $dropdownLock = CheckboxField::create('PreventDropdownItemUpdate', 'Prevent dropdown items from being refreshed from the vocab server on save of this field (handy if you want to keep your modifications).'),
             $placeholderValue = TextField::create('PlaceholderValue')
                 ->setRightTitle('Placeholder fields are not displayed to the user, but are sent to the Catalogue so require you to enter a value.'),
             $keywordsValue = TextField::create('KeywordsValue', 'Your Keywords')
@@ -99,30 +101,31 @@ class PostcardMetadataField extends DataObject
         // Now output a gridfield for the dropdown values. When loaded from the vocabulary
         // server there can ge quite a long list so add this to its own tab.
         if ($this->ID) {
-            $fields->addFieldToTab('Root.DropdownItems',
-                DisplayLogicWrapper::create(
-                    NoticeMessage::create('You can control the order of the dropdown entries by clicking the small :: icon the left of the row and dragging it up or down.'),
+            // Only output the dropdown item tab if this field is of dropdown type.
+            if ($this->FieldType == 'DROPDOWN') {
+                $fields->addFieldsToTab('Root.DropdownItems', array(
+                    NoticeMessage::create('You can control the order of the dropdown entries by clicking the small :: icon the left of the row and dragging it up or down. To move an item between pages, after dragging, drop it on the < or > buttons at the bottom of the gridfield.'),
                     GridField::create(
-                        'DropdownEntries',
-                        'Dropdown entries',
-                        $this->DropdownEntries(),
-                        GridFieldConfig_RecordEditor::create()
-                            ->removeComponentsByType('GridFieldAddExistingAutocompleter')
-                            ->addComponent(new GridFieldOrderableRows('SortOrder'))
+                            'DropdownEntries',
+                            'Dropdown entries',
+                            $this->DropdownEntries(),
+                            GridFieldConfig_RecordEditor::create()
+                                ->removeComponentsByType('GridFieldAddExistingAutocompleter')
+                                ->addComponent(new GridFieldOrderableRows('SortOrder'))
+                        )
                     )
-                )->hideUnless('FieldType')->isEqualTo('DROPDOWN')->end()
-            );
+                );
 
-            // If this field type is a dropdown, and it has a VocabUrl, and there is a VocabMessage then display
-            // a backend message of the correct type (good, bad) to the user and populate it with the message.
-            if ($this->FieldType == 'DROPDOWN' && $this->DropdownVocabularyUrl) {
-                $msg = LastVocabLoadMessage::get()->where(array('PostcardMetadataFieldID = ?' => $this->ID))->first();
+                // If there is a vocabulary message for this field then output it.
+                if ($this->DropdownVocabularyUrl) {
+                    $msg = LastVocabLoadMessage::get()->where(array('PostcardMetadataFieldID = ?' => $this->ID))->first();
 
-                if ($msg) {
-                    if ($msg->Type == 'BAD') {
-                        $fields->addFieldToTab('Root.Main', ErrorMessage::create($msg->Date . ' : ' . $msg->Message));
-                    } else {
-                        $fields->addFieldToTab('Root.Main', NoticeMessage::create($msg->Date . ' : ' . $msg->Message));
+                    if ($msg) {
+                        if ($msg->Type == 'BAD') {
+                            $fields->addFieldToTab('Root.Main', ErrorMessage::create(Date('d/m/Y', strtotime($msg->Date)) . ' : ' . $msg->Message));
+                        } else {
+                            $fields->addFieldToTab('Root.Main', NoticeMessage::create(Date('d/m/Y', strtotime($msg->Date)) . ' : ' . $msg->Message));
+                        }
                     }
                 }
             }
@@ -176,8 +179,9 @@ class PostcardMetadataField extends DataObject
         // Call parent function.
         parent::onAfterWrite();
 
-        // If the type of this field is dropdown and a vocabularly url has been specified.
-        if ($this->FieldType == 'DROPDOWN' && $this->DropdownVocabularyUrl)
+        // If the type of this field is dropdown and a vocabularly url has been specified, provided the user
+        // has not chosen to prevent update, then update/populate the dropdown items from the vocab server.
+        if ($this->FieldType == 'DROPDOWN' && $this->DropdownVocabularyUrl && !$this->PreventDropdownItemUpdate)
         {
             $errorMessage = $this->populateDropdownFromVocab();
 
@@ -192,7 +196,7 @@ class PostcardMetadataField extends DataObject
 
     /**
      * Sets the last vocab message.
-     * 
+     *
      * @param String $status  GOOD OR BAD.
      * @param String $message The message set.
      */
@@ -334,11 +338,6 @@ class PostcardMetadataField extends DataObject
 
         // Get a curl error if there is one
         $curlError = curl_error($ch);
-
-        // Normalise the status code
-        if (curl_error($ch) !== '' || $statusCode == 0) {
-            $statusCode = 500;
-        }
 
         // close curl resource to free up system resources
         curl_close($ch);
