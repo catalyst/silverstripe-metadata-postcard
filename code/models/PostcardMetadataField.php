@@ -89,6 +89,7 @@ class PostcardMetadataField extends DataObject
         $placeholderValue->validateIf('FieldType')->isEqualTo('PLACEHOLDER');
         $dropdownOther->hideUnless('FieldType')->isEqualTo('DROPDOWN');
         $dropdownVocab->hideUnless('FieldType')->isEqualTo('DROPDOWN');
+        $dropdownLock->hideUnless('FieldType')->isEqualTo('DROPDOWN');
         $keywordsValue->hideUnless('FieldType')->isEqualTo('KEYWORDS');
 
         // The label is very important if the field is not a placeholder as we need to display a label to the user
