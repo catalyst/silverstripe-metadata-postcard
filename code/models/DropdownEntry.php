@@ -39,8 +39,10 @@ class DropdownEntry extends DataObject
     public function getCMSFields()
     {
         $fields = new FieldList(
-            TextField::create('Key'),
+            TextField::create('Key')
+                ->setRightTitle('The key is the value sent to the Catalogue.'),
             TextField::create('Label')
+                ->setRightTitle('The label is what is displayed to the user in the dropdown so can be different than the key.')
         );
 
         return $fields;
