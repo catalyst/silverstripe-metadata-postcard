@@ -1,0 +1,114 @@
+.cataloguePageHeader {
+  margin-bottom: 20px;
+}
+
+.catalogueSearchTitle {
+  width: 100%;
+}
+
+.errorMessage {
+  width: 100%;
+  margin-bottom: 25px;
+  background-color: #f2dede;
+  color: #a94442;
+  padding: 10px 12px 10px 12px;
+  box-sizing: border-box;
+  border:1px solid #ebccd1;
+}
+
+.noRecordsMessage {
+    width: 100%;
+    margin-bottom: 25px;
+    background-color: #d9edf7;
+    color: #31708f;
+    padding: 10px 12px 10px 12px;
+    box-sizing: border-box;
+    border:1px solid #bcdff1;
+}
+
+.catalogueSearch {
+  width: 100%;
+}
+@media screen and (max-width: 1000px) {
+  .catalogueSearch {
+  }
+}
+.catalogueSearch > form > label {
+  font-weight: bold;
+}
+.catalogueSearchForm {
+}
+
+.clearSearch {
+  margin-left: 7px;
+}
+
+.searchButton {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+
+
+.catalogueContent {
+  width: 100%;
+  margin-top: 30px;
+  margin-bottom: 20px;
+}
+
+.cataloguePagination {
+  clear: both;
+  text-align: center;
+}
+
+.cataloguePaginationPrevLink,
+.cataloguePaginationNextLink,
+.cataloguePaginationPrev,
+.cataloguePaginationNext {
+  padding: 0px 4px 0px 4px;
+}
+.cataloguePaginationPrev,
+.cataloguePaginationNext {
+  color: #bbb;
+}
+
+.cataloguePaginationPrevLink,
+.cataloguePaginationNextLink {
+  color: #0b7aca;
+}
+.cataloguePaginationPrevLink:visited,
+.cataloguePaginationNextLink:visited {
+  color: #0b7aca;
+}
+
+.cataloguePaginationPages {
+  border-left: 1px solid #ccc;
+  border-right: 1px solid #ccc;
+  padding: 0px 8px 0px 8px;
+}
+
+.catalogueBtns {
+  float: left;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.catalogueBtn {
+  display: inline-block;
+  padding: 5px 15px 5px 15px;
+  border: 1px solid #ccc;
+  background-color: #fff !important;
+}
+
+.typography a.external {
+  display: none;
+}
+.catalougeTable {
+  border:1px solid #ccc;
+}
+.catalougeTable tbody > tr > td {
+  padding: 15px;
+}
+.typography .catalougeTable tbody tr:hover td {
+  background-color: #fff;
+}

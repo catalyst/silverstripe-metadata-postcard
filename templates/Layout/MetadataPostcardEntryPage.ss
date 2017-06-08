@@ -25,7 +25,7 @@
     <% if $HelpBoxTitle || $BrowseBoxTitle %>
         <aside class="span3">
             <% if $HelpBoxTitle %>
-                <div class="helpbox" style="background-color:#eee;padding:20px;margin-bottom:30px;">
+                <div class="sidebox">
                     <h3 style="margin-top:0;">$HelpBoxTitle</h3>
                     $HelpBoxMessage
                     <% loop $Curators %>
@@ -34,7 +34,7 @@
                 </div>
             <% end_if %>
             <% if $BrowseBoxTitle %>
-                <div class="helpbox" style="background-color:#eee;padding:20px;margin-bottom:30px;">
+                <div class="sidebox">
                     <h3 style="margin-top:0;">$BrowseBoxTitle</h3>
                     $BrowseBoxMessage
                     <a href="$BrowseCataloguePage.Link" target="_blank">Browse the catalogue...</a>

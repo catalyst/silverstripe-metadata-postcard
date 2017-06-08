@@ -297,6 +297,15 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
     );
 
     /**
+     * Ensure that the CSS we need is included.
+     */
+    public function init()
+    {
+        parent::init();
+        Requirements::css('metadata-postcard-entry/css/metadata-global.css');
+    }
+
+    /**
      * This function creates the metdata entry form by getting the fields defined
      * for the page, in their sort order, and creating form fields for them.
      *
