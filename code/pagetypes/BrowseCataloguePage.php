@@ -699,12 +699,12 @@ class BrowseCataloguePage_Controller extends Page_Controller
 
                     $addressList = $xpath->query('gmd:address/gmd:CI_Address', $contact);
                     foreach ($addressList as $address) {
-                        $mdContact['MDDeliveryPoint'] = $this->queryNodeValue($xpath, 'gmd:deliveryPoint/gco:CharacterString', $contact);
-                        $docmdContact['MDCity'] = $this->queryNodeValue($xpath, 'gmd:city/gco:CharacterString', $contact);
-                        $mdContact['MDAdministrativeArea'] = $this->queryNodeValue($xpath, 'gmd:administrativeArea/gco:CharacterString', $contact);
-                        $mdContact['MDPostalCode'] = $this->queryNodeValue($xpath, 'gmd:postalCode/gco:CharacterString', $contact);
-                        $mdContact['MDCountry'] = $this->queryNodeValue($xpath, 'gmd:country/gco:CharacterString', $contact);
-                        $mdContact['MDElectronicMailAddress'] = $this->queryNodeValue($xpath, 'gmd:electronicMailAddress/gco:CharacterString', $contact);
+                        $mdContact['MDDeliveryPoint'] = $this->queryNodeValue($xpath, 'gmd:deliveryPoint/gco:CharacterString', $address);
+                        $mdContact['MDCity'] = $this->queryNodeValue($xpath, 'gmd:city/gco:CharacterString', $address);
+                        $mdContact['MDAdministrativeArea'] = $this->queryNodeValue($xpath, 'gmd:administrativeArea/gco:CharacterString', $address);
+                        $mdContact['MDPostalCode'] = $this->queryNodeValue($xpath, 'gmd:postalCode/gco:CharacterString', $address);
+                        $mdContact['MDCountry'] = $this->queryNodeValue($xpath, 'gmd:country/gco:CharacterString', $address);
+                        $mdContact['MDElectronicMailAddress'] = $this->queryNodeValue($xpath, 'gmd:electronicMailAddress/gco:CharacterString', $address);
                     }
 
                     // add mdContact object to the contact relationship object
