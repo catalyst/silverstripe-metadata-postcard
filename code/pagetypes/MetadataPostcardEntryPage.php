@@ -30,6 +30,8 @@ class MetadataPostcardEntryPage extends Page
         'PushFailureMessage' => 'Text',
         'HelpBoxTitle' => 'Varchar(255)',
         'HelpBoxMessage' => 'HTMLText',
+        'BrowseBoxTitle' => 'Varchar(255)',
+        'BrowseBoxMessage' => 'HTMLText',
         'ProjectNumber' => 'Varchar(255)',          // These fields are only used for the URL builder
         'ProjectManager' => 'Varchar(255)',         // and are not fields on the form so need a value captured somewhere.
         'ProjectCoordinator' => 'Varchar(255)',
@@ -43,6 +45,13 @@ class MetadataPostcardEntryPage extends Page
         'Fields' => 'PostcardMetadataField',
         'Curators' => 'CatalogueCurator',
         'UrlParams' => 'UrlParameter',
+    );
+
+    /**
+     * @return array
+     */
+    private static $has_one = array(
+        'BrowseCataloguePage' => 'SiteTree',
     );
 
     /**
@@ -60,13 +69,19 @@ class MetadataPostcardEntryPage extends Page
         $fields->removeByName('RelatedPages');
         $fields->removeByName('Tags');
 
-        // Add a tab for the help box displayed on the right of the page.
+        // Add a tab for the boxes displayed on the right of the page.
+        // Help box and Browse page link.
         $fields->addFieldsToTab(
-            'Root.HelpBox',
+            'Root.HelpAndBrowse',
             array(
-                LiteralField::create('HelpBoxInstructions', '<p><strong>If you would like a box displayed to the top right of the page with help information, then please fill out the fields below. The curator email address(es) will automatically be output after the message.</strong></p>'),
+                LiteralField::create('HelpBoxInstructions', '<p><strong>HELP: If you would like a box displayed to the right of the page with help information, then please fill out the fields below. The curator email address(es) will automatically be output after the message.</strong></p>'),
                 TextField::create('HelpBoxTitle'),
-                HtmlEditorField::create('HelpBoxMessage')
+                HtmlEditorField::create('HelpBoxMessage')->setRows(5),
+                // Now the browse box..
+                LiteralField::create('BrowseBoxInstructions', '<p><strong>BROWSE: If you would like a box displayed to the right of the page with a link to the browse page for this catalogue, then please fill out the fields below including which page to link to.</strong></p>'),
+                TreeDropdownField::create('BrowseCataloguePageID', 'Browse Catalogue page', 'SiteTree'),
+                TextField::create('BrowseBoxTitle'),
+                HtmlEditorField::create('BrowseBoxMessage')->setRows(5)
             )
         );
 
@@ -280,6 +295,15 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
     private static $allowed_actions = array(
         'MetadataEntryForm',
     );
+
+    /**
+     * Ensure that the CSS we need is included.
+     */
+    public function init()
+    {
+        parent::init();
+        Requirements::css('metadata-postcard-entry/css/metadata-global.css');
+    }
 
     /**
      * This function creates the metdata entry form by getting the fields defined
