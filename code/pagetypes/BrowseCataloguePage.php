@@ -48,7 +48,7 @@ class BrowseCataloguePage extends Page
         // Add field to link to the catalogue.
         $fields->addFieldToTab(
             'Root.Catalogue',
-            TextField::create('CatalogueUrl')->setRightTitle('This must be to the CSW endpoint for the catalogue')
+            TextField::create('CatalogueUrl')->setRightTitle('This must be to the CSW API endpoint for the catalogue which usually means having /srv/en/csw/srv/en/csw on the end.')
         );
 
         // Add a tab for the boxes displayed on the right of the page. Help and add page.
@@ -70,14 +70,15 @@ class BrowseCataloguePage extends Page
     }
 
     /**
-     * Ensure that the catalogue URL is trimmed of any whitespace and has a slash on the end.
+     * Ensure that the catalogue URL is trimmed of any whitespace and does not
+     * have a slash on the end.
      */
     protected function onBeforeWrite()
     {
         parent::onBeforeWrite();
 
         if (($url = trim($this->CatalogueUrl)) != '') {
-            $this->CatalogueUrl = rtrim($url, '/') . '/';
+            $this->CatalogueUrl = rtrim($url, '/');
         }
     }
 }
@@ -380,10 +381,7 @@ class BrowseCataloguePage_Controller extends Page_Controller
 
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/xml'));
-        // Note the srv/en/csw needs to be twice in the url for it to work, so even though the
-        // CMS admin entered something like https://dc.niwa.co.nz/boi_dc/srv/en/csw/ an additional
-        // 'srv/en/csw' is needed on the end for XML results rather than the catalogue we page to be displayed.
-        curl_setopt($ch, CURLOPT_URL, $this->CatalogueUrl . 'srv/en/csw');
+        curl_setopt($ch, CURLOPT_URL, $this->CatalogueUrl);
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
 
