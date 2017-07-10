@@ -9,10 +9,10 @@
                 <div class="result">
 
                     <div class="catalogueBtns">
-                        <% if CIOnlineResources %>
-                            <% loop CIOnlineResources %>
-                                <% if CIOnlineProtocol == 'WWW:LINK-1.0-http--metadata-URL' %>
-                                    <% if CIOnlineLinkage %>
+                        <% if $CIOnlineResources %>
+                            <% loop $CIOnlineResources %>
+                                <% if $CIOnlineProtocol == 'WWW:LINK-1.0-http--metadata-URL' %>
+                                    <% if $CIOnlineLinkage %>
                                         <a class="catalogueBtn" href="$CIOnlineLinkage" style="background-image: none;" rel="noreferrer" target="_blank">View full metadata</a>
                                     <% else %>
                                         Not Available
@@ -24,7 +24,7 @@
                     </div>
 
                     <table class="catalougeTable">
-                        <% loop MDCitationDates %>
+                        <% loop $MDCitationDates %>
                         <tr>
                             <td style="width:27%"><strong>Date of $MDDateType:</strong></td>
                             <td>$Top.DateFormatNice($MDDateTime)</td>
@@ -32,12 +32,12 @@
                         <% end_loop %>
                         <tr>
                             <td><strong>Category:</strong></td>
-                            <td><% loop MDTopicCategory %> $Value<br/> <% end_loop %></td>
+                            <td><% loop $MDTopicCategory %> $Value<br/> <% end_loop %></td>
                         </tr>
                         <tr>
                             <td><strong>Description:</strong></td>
                             <td>
-                                <% if MDAbstract %>
+                                <% if $MDAbstract %>
                                     $MDAbstract
                                 <% else %>
                                     Not Available
@@ -47,7 +47,7 @@
                         <tr>
                             <td><strong>Geographic Description:</strong></td>
                             <td>
-                                <% if MDGeographicDiscription %>
+                                <% if $MDGeographicDiscription %>
                                     $MDGeographicDiscription
                                 <% else %>
                                     Not Available
@@ -57,26 +57,26 @@
                         <tr>
                             <td><strong>Coordinates:</strong></td>
                             <td>
-                                <strong>North:</strong> <% if MDNorthBound %>$MDNorthBound<% else %>Not Available<% end_if %>,
-                                <strong>West:</strong> <% if MDWestBound %>$MDWestBound<% else %>Not Available<% end_if %>,
-                                <strong>East:</strong> <% if MDEastBound %>$MDEastBound<% else %>Not Available<% end_if %>,
-                                <strong>South:</strong> <% if MDSouthBound %>$MDSouthBound<% else %>Not Available<% end_if %>
+                                <strong>North:</strong> <% if $MDNorthBound %>$MDNorthBound<% else %>Not Available<% end_if %>,
+                                <strong>West:</strong> <% if $MDWestBound %>$MDWestBound<% else %>Not Available<% end_if %>,
+                                <strong>East:</strong> <% if $MDEastBound %>$MDEastBound<% else %>Not Available<% end_if %>,
+                                <strong>South:</strong> <% if $MDSouthBound %>$MDSouthBound<% else %>Not Available<% end_if %>
                             </td>
                         </tr>
-                        <% if MDContacts %>
+                        <% if $MDContacts %>
                         <tr>
                             <td>
                                 <strong>Contact:</strong>
                                 <p>To get additional data or seek further information</p>
                             </td>
-                            <% loop PointOfContact %>
+                            <% loop $PointOfContact %>
                             <td>
-                                <strong>Name:</strong> <% if MDIndividualName %>$MDIndividualName<% else %>Not Available <% end_if %><br/>
-                                <strong>Organisation:</strong> <% if MDOrganisationName %>$MDOrganisationName<% else %>Not Available <% end_if %><br/>
-                                <strong>Position:</strong> <% if MDPositionName %>$MDPositionName<% else %>Not Available <% end_if %><br/>
+                                <strong>Name:</strong> <% if $MDIndividualName %>$MDIndividualName<% else %>Not Available <% end_if %><br/>
+                                <strong>Organisation:</strong> <% if $MDOrganisationName %>$MDOrganisationName<% else %>Not Available <% end_if %><br/>
+                                <strong>Position:</strong> <% if $MDPositionName %>$MDPositionName<% else %>Not Available <% end_if %><br/>
                                 <strong>Phone:</strong>
-                                <% if MDVoice %>
-                                    <% loop MDVoice %>
+                                <% if $MDVoice %>
+                                    <% loop $MDVoice %>
                                     $Value <br/>
                                     <% end_loop %>
                                 <% else %>
@@ -85,27 +85,27 @@
                             <% end_loop %>
                         </tr>
                         <% end_if %>
-                        <% if MCPMDCreativeCommons %>
+                        <% if $MCPMDCreativeCommons %>
                         <tr>
                             <td>
-                                <% if First %>
+                                <% if $First %>
                                     <strong>Licence:</strong>
                                 <% else %>
                                 <% end_if %>
                             </td>
                             <td>
-                                <% loop MCPMDCreativeCommons %>
-                                    <% if imageLink %>
-                                        <% if licenseLink %>
+                                <% loop $MCPMDCreativeCommons %>
+                                    <% if $imageLink %>
+                                        <% if $licenseLink %>
                                             <a href='$licenseLink' target='licence' style="background:none;"><img style="float:left;" src='$imageLink'/></a>
                                         <% else %>
                                             <img style="float:left;" src='$imageLink'/>
                                         <% end_if %>
                                     <% end_if %>
-                                    <% if useLimitation %>
+                                    <% if $useLimitation %>
                                         <span style="float:left;">$useLimitation </span>
                                     <% end_if %>
-                                    <% if useLimitation %>
+                                    <% if $useLimitation %>
                                         <br/>
                                         <a href='copyright-attributing' target='licence'>Attribution Information</a>
                                         <br/>
@@ -130,11 +130,11 @@
                                 Click on link to download
                             </td>
                             <td>
-                                <% if CIOnlineResources %>
-                                    <% loop CIOnlineResources %>
-                                        <% if CIOnlineProtocol == 'WWW:LINK-1.0-http--downloaddata' %>
-                                            <% if CIOnlineLinkage %>
-                                                <% if CIOnlineName %>
+                                <% if $CIOnlineResources %>
+                                    <% loop $CIOnlineResources %>
+                                        <% if $CIOnlineProtocol == 'WWW:LINK-1.0-http--downloaddata' %>
+                                            <% if $CIOnlineLinkage %>
+                                                <% if $CIOnlineName %>
                                                     <a href="$CIOnlineLinkage" rel="noreferrer" target="_blank">$CIOnlineName</a><br/>
                                                     $CIOnlineDescription
                                                 <% else %>
@@ -151,11 +151,11 @@
                                 <% end_if %>
                             </td>
                         </tr>
-                        <% if MDKeywords %>
+                        <% if $MDKeywords %>
                         <tr>
                             <td><strong>Keywords:</strong></td>
                             <td>
-                                <% loop MDKeywords %>
+                                <% loop $MDKeywords %>
                                     $Value<br />
                                 <% end_loop %>
                             </td>
