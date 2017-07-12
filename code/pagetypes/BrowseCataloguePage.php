@@ -62,7 +62,7 @@ class BrowseCataloguePage extends Page
         $fields->addFieldsToTab(
             'Root.Catalogue',
             array(
-                TextField::create('CatalogueUrl')->setRightTitle('This must be to the CSW API endpoint for the catalogue which usually means having /srv/en/csw/srv/en/csw on the end.'),
+                TextField::create('CatalogueUrl')->setRightTitle('This must be to the CSW API endpoint for the catalogue.'),
                 DropdownField::create('Format', null, array_combine(array_keys($this->config()->output_schemas), array_keys($this->config()->output_schemas)))
             )
         );
@@ -163,7 +163,7 @@ class BrowseCataloguePage_Controller extends Page_Controller
                 if (!$this->ErrorMessage) {
                     // Create a new DOM documents and then load the response as XML in to it.
                     try {
-                        $doc  = new DOMDocument();
+                        $doc = new DOMDocument();
                         $doc->loadXML($record);
                         // Call function to parse the document.
                         $mdArray = $this->{'parseDetails' . $this->Format}($doc);
@@ -797,6 +797,7 @@ class BrowseCataloguePage_Controller extends Page_Controller
         $php = $this->XML2PHP($metadata->item(0));
 
         $return = [];
+
         foreach ([
             'dc:title' => 'MDTitle',
             'dc:identifier' => 'MDIdentifier',
@@ -823,6 +824,7 @@ class BrowseCataloguePage_Controller extends Page_Controller
         if (isset($node->childNodes) && $node->childNodes->length == 1 && $node->childNodes->item(0)->nodeType == XML_TEXT_NODE) return $this->XML2PHP($node->childNodes->item(0));
 
         $php = [];
+
         foreach ($node->childNodes as $child) {
 
             $value = $this->XML2PHP($child);
