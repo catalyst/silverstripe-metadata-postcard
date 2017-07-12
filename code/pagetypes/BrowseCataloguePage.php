@@ -13,6 +13,18 @@ class BrowseCataloguePage extends Page
     private static $description = 'Allows users to browse data in a catalogue.';
 
     /**
+     * Supported standards, map of format to output schema
+     * There need to be one parseSummary{$Format} and one parseDetails{$Format} method
+     * for every supported format
+     *
+     * @var array
+     */
+    private static $output_schemas = [
+        'ISO' => 'csw:IsoRecord',
+        'DC' => '',
+    ];
+
+    /**
      * @var array
      */
     private static $db = array(
@@ -21,6 +33,7 @@ class BrowseCataloguePage extends Page
         'HelpBoxMessage' => 'HTMLText',
         'AddBoxTitle' => 'Varchar(255)',
         'AddBoxMessage' => 'HTMLText',
+        'Format' => 'Varchar',
     );
 
     /**
@@ -46,9 +59,12 @@ class BrowseCataloguePage extends Page
         $fields->removeByName('Tags');
 
         // Add field to link to the catalogue.
-        $fields->addFieldToTab(
+        $fields->addFieldsToTab(
             'Root.Catalogue',
-            TextField::create('CatalogueUrl')->setRightTitle('This must be to the CSW API endpoint for the catalogue which usually means having /srv/en/csw/srv/en/csw on the end.')
+            array(
+                TextField::create('CatalogueUrl')->setRightTitle('This must be to the CSW API endpoint for the catalogue.'),
+                DropdownField::create('Format', null, array_combine(array_keys($this->config()->output_schemas), array_keys($this->config()->output_schemas)))
+            )
         );
 
         // Add a tab for the boxes displayed on the right of the page. Help and add page.
@@ -67,19 +83,6 @@ class BrowseCataloguePage extends Page
         );
 
         return $fields;
-    }
-
-    /**
-     * Ensure that the catalogue URL is trimmed of any whitespace and does not
-     * have a slash on the end.
-     */
-    protected function onBeforeWrite()
-    {
-        parent::onBeforeWrite();
-
-        if (($url = trim($this->CatalogueUrl)) != '') {
-            $this->CatalogueUrl = rtrim($url, '/');
-        }
     }
 }
 
@@ -157,14 +160,13 @@ class BrowseCataloguePage_Controller extends Page_Controller
         if ($this->CatalogueUrl) {
             if ($id) {
                 $record = $this->getRecordByID($id);
-
                 if (!$this->ErrorMessage) {
                     // Create a new DOM documents and then load the response as XML in to it.
                     try {
-                        $doc  = new DOMDocument();
+                        $doc = new DOMDocument();
                         $doc->loadXML($record);
                         // Call function to parse the document.
-                        $mdArray = $this->parseDetails($doc);
+                        $mdArray = $this->{'parseDetails' . $this->Format}($doc);
 
                         // Check if there is an item in the returned array and if so set the data to that.
                         if (isset($mdArray[0])) {
@@ -182,7 +184,7 @@ class BrowseCataloguePage_Controller extends Page_Controller
         }
 
         // Render the page with the data for the record.
-        return $this->renderWith(array('CatalogueEntryDetails', 'Page'), $data);
+        return $this->renderWith(array('CatalogueEntryDetails_' . $this->Format, 'Page'), $data);
     }
 
     /**
@@ -205,6 +207,16 @@ class BrowseCataloguePage_Controller extends Page_Controller
     }
 
     /**
+     * Get the output schema for the $this->Format
+     *
+     * @return string
+     */
+    protected function getOutputSchema()
+    {
+        return $this->dataRecord->config()->output_schemas[$this->Format];
+    }
+
+    /**
      * Searches the catalogue. This is either a browse type search or a search with the keyword the user entered.
      * The record position needs to passed in order for the pagination to work (this is not a page number).
      *
@@ -218,9 +230,10 @@ class BrowseCataloguePage_Controller extends Page_Controller
         // Calculate the start position for the query which is not a page number but record number so
         // we must convert back from the page number the user sees to a record position.
         $startPosition = (($this->PageNumber - 1) * $this->RecordsPerPage) + 1;
+        $outputSchema = $this->OutputSchema ? ' outputSchema="' . $this->OutputSchema . '"' : '';
 
         // Put together the xml data for the body of the request which is a POST.
-        $data = '<csw:GetRecords xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" service="CSW" version="2.0.2" resultType="results" outputSchema="csw:IsoRecord" maxRecords="' . $this->RecordsPerPage . '" startPosition="' . $startPosition . '">
+        $data = '<csw:GetRecords xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" xmlns:ogc="http://www.opengis.net/ogc" xmlns:gml="http://www.opengis.net/gml" service="CSW" version="2.0.2" resultType="results"' . $outputSchema . ' maxRecords="' . $this->RecordsPerPage . '" startPosition="' . $startPosition . '">
         <csw:Query typeNames="gmd:MD_Metadata">
             <ogc:SortBy>
                 <ogc:SortProperty>
@@ -283,7 +296,7 @@ class BrowseCataloguePage_Controller extends Page_Controller
                 $doc->loadXML($responseBody);
 
                 // Call function to parse the document.
-                list($totalRecords, $nextPosition, $mdArray) = $this->parseSummary($doc);
+                list($totalRecords, $nextPosition, $mdArray) = $this->{'parseSummary' . $this->Format}($doc);
 
                 // Call function to calculate the pagination.
                 $pagination = $this->calculatePagination($totalRecords, $nextPosition);
@@ -336,9 +349,11 @@ class BrowseCataloguePage_Controller extends Page_Controller
     {
         $record = '';
 
+        $outputSchema = $this->OutputSchema ? ' outputSchema="' . $this->OutputSchema . '"' : '';
+
         // Put together the xml body for the post to get the record.
         $data = '<?xml version="1.0"?>
-        <csw:GetRecordById xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" service="CSW" version="2.0.2" outputSchema="csw:IsoRecord">
+        <csw:GetRecordById xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" service="CSW" version="2.0.2"' . $outputSchema . '>
         	<csw:ElementSetName>full</csw:ElementSetName>
         	<csw:Id>' . $id . '</csw:Id>
         </csw:GetRecordById>';
@@ -363,6 +378,15 @@ class BrowseCataloguePage_Controller extends Page_Controller
             // If we are to return the XML then the geocatalogue had this module to strip the outer tags around the response.
             if ($xml) {
                 $record = preg_replace('/((\<csw\:GetRecordByIdResponse)|(<\/csw\:GetRecordByIdResponse)).*\>/', '', $record);
+                if ($this->Format == 'DC') {
+                    $record = preg_replace([
+                        '/(\<csw\:Record).*\>/',
+                        '/(<\/csw\:Record)\>/'
+                    ], [
+                        '<simpledc xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dct="http://purl.org/dc/terms/" xmlns:geonet="http://www.fao.org/geonetwork" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="xml/schemas/dublin-core/schema.xsd" xmlns:ows="http://www.opengis.net/ows">',
+                        '</simpledc>'
+                    ], $record);
+                }
             }
         }
 
@@ -415,7 +439,7 @@ class BrowseCataloguePage_Controller extends Page_Controller
      * @param  DOMDocument  $doc
      * @return Array
      */
-    protected function parseSummary($doc)
+    protected function parseSummaryISO($doc)
     {
         $response = $doc->getElementsByTagNameNS('http://www.opengis.net/cat/csw/2.0.2', "GetRecordsResponse");
 
@@ -496,6 +520,47 @@ class BrowseCataloguePage_Controller extends Page_Controller
     }
 
     /**
+     * Parses the response from the catalogue and extracts the information we want from DC type records.
+     *
+     * @param  DOMDocument  $doc
+     * @return Array
+     */
+    protected function parseSummaryDC($doc)
+    {
+        $response = $doc->getElementsByTagNameNS('http://www.opengis.net/cat/csw/2.0.2', "GetRecordsResponse");
+
+        $status = $response->item(0)->getElementsByTagName("SearchResults");
+
+        // get search summary
+        $numberOfRecordsMatched = $status->item(0)->getAttribute('numberOfRecordsMatched');
+        $numberOfRecordsReturned = $status->item(0)->getAttribute('numberOfRecordsReturned');
+        $nextRecord = $status->item(0)->getAttribute('nextRecord');
+
+        $metadata = $response->item(0)->getElementsByTagName("Record");
+
+        $mdArray = array();
+
+        foreach ($metadata as $item) {
+            $mdItem = array();
+
+            foreach ([
+                'identifier' => 'fileIdentifier',
+                'title' => 'MDTitle',
+                'description' => 'MDAbstract',
+            ] as $tag => $prop) {
+                $element = $item->getElementsByTagName($tag);
+                if ($element->length > 0) {
+                    $mdItem[$prop] = $element->item(0)->nodeValue;
+                }
+            }
+
+            $mdArray[] = ArrayData::create($mdItem);
+        }
+
+        return array($numberOfRecordsMatched, $nextRecord, $mdArray);
+    }
+
+    /**
      * From the geocatalogue module, this function parses and gets the full details of an ISO format MCP record.
      * I did have to alter it to create arraylists and arraydata in order to the template to loop and output,
      * I also altered some of the associative array index names, removing any 2 part names with colon (:) in the middle.
@@ -503,7 +568,7 @@ class BrowseCataloguePage_Controller extends Page_Controller
      * @param  DOMDocument $doc
      * @return Array
      */
-    protected function parseDetails($doc)
+    protected function parseDetailsISO($doc)
     {
         $mdArray = array();
 
@@ -713,6 +778,78 @@ class BrowseCataloguePage_Controller extends Page_Controller
         }
 
         return $mdArray;
+    }
+
+    /**
+     * This function parses and gets the full details of an DC format record.
+     *
+     * @param  DOMDocument $doc
+     * @return Array
+     */
+    protected function parseDetailsDC($doc)
+    {
+        $mdArray = array();
+
+        $response = $doc->getElementsByTagNameNS('http://www.opengis.net/cat/csw/2.0.2', "GetRecordByIdResponse");
+
+        $metadata = $response->item(0)->getElementsByTagName("Record");
+
+        $php = $this->XML2PHP($metadata->item(0));
+
+        $return = [];
+
+        foreach ([
+            'dc:title' => 'MDTitle',
+            'dc:identifier' => 'MDIdentifier',
+        ] as $in => $out) {
+            $return[$out] = $php[$in]['Value'];
+            unset($php[$in]);
+        }
+
+        $return['Rows'] = ArrayList::create(array_values($php));
+
+        return [$return];
+    }
+
+    /**
+     * Transform a nested XML structure into a nested PHP array structure.
+     *
+     * @param DOMNode $node to be transformed
+     *
+     * @return array|string
+     */
+    protected function XML2PHP($node)
+    {
+        if ($node->nodeType == XML_TEXT_NODE) return trim($node->textContent);
+        if (isset($node->childNodes) && $node->childNodes->length == 1 && $node->childNodes->item(0)->nodeType == XML_TEXT_NODE) return $this->XML2PHP($node->childNodes->item(0));
+
+        $php = [];
+
+        foreach ($node->childNodes as $child) {
+
+            $value = $this->XML2PHP($child);
+
+            if (empty($value)) continue;
+
+            if (is_array($value)) $value = ArrayList::create(array_values($value));
+
+            if (isset($php[$child->nodeName])) {
+                if ($php[$child->nodeName]['Value'] instanceof ArrayList) {
+                    $php[$child->nodeName]['Value']->push(ArrayData::create(['Value' => $value]));
+                } else {
+                    $php[$child->nodeName]['Value'] = ArrayList::create([
+                        ArrayData::create(['Value' => $php[$child->nodeName]['Value']]),
+                        ArrayData::create(['Value' => $value])
+                    ]);
+                }
+            } else {
+                $php[$child->nodeName] = [
+                    'Label' => FormField::name_to_label(ucfirst($child->localName)),
+                    'Value' => $value,
+                ];
+            }
+        }
+        return $php;
     }
 
     /**
