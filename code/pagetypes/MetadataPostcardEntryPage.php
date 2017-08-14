@@ -259,9 +259,6 @@ class MetadataPostcardEntryPage extends Page
 
         $this->CataloguePushUrl = trim($this->CataloguePushUrl);
         $this->CatalogueViewUrl = trim($this->CatalogueViewUrl);
-
-        // Also ensure that the view URL has a / on the end.
-        $this->CatalogueViewUrl = rtrim($this->CatalogueViewUrl, '/') . '/';
     }
 
     /**
