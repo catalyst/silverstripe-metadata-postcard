@@ -32,8 +32,10 @@ class MetadataPostcardEntryPage extends Page
         'HelpBoxMessage' => 'HTMLText',
         'BrowseBoxTitle' => 'Varchar(255)',
         'BrowseBoxMessage' => 'HTMLText',
-        'ProjectNumber' => 'Varchar(255)',          // These fields are only used for the URL builder
-        'ProjectManager' => 'Varchar(255)',         // and are not fields on the form so need a value captured somewhere.
+        'ProjectName' => 'Varchar(255)',        // These fields are only used for the URL builder
+        'ProjectNumber' => 'Varchar(255)',      // and are not fields on the form so need a value captured somewhere.
+        'ProjectManager' => 'Varchar(255)',
+        'ProjectManagerEmail' => 'Varchar(255)',
         'ProjectCoordinator' => 'Varchar(255)',
         'ProjectCoordinatorEmail' => 'Varchar(255)',
     );
@@ -169,8 +171,10 @@ class MetadataPostcardEntryPage extends Page
             array(
                 LiteralField::create('UrlInstructions', "<p><strong>Only use this tab after for have specified the fields on the form. The purpose of this tab is to help you create a parameterised url to the page.</strong></p>"),
                 NoticeMessage::create('1) Because these parameters are not fields on the form, please enter their URL parameter values here.'),
+                TextField::create('ProjectName'),
                 TextField::create('ProjectNumber'),
                 TextField::create('ProjectManager'),
+                TextField::create('ProjectManagerEmail'),
                 TextField::create('ProjectCoordinator'),
                 TextField::create('ProjectCoordinatorEmail'),
                 NoticeMessage::create('2) Next use this gridfield below to add other form fields you want to have parameters in the URL.'),
@@ -217,12 +221,20 @@ class MetadataPostcardEntryPage extends Page
 
         // If values for the project number, Project Manager, Project Coordinator, or Project Coordinator
         // email fields have been specified include them as parameters in the URL.
+        if ($this->ProjectName) {
+            $parameters .= '&Project_Name=' . urlencode($this->ProjectName);
+        }
+
         if ($this->ProjectNumber) {
             $parameters .= '&Project_Number=' . urlencode($this->ProjectNumber);
         }
 
         if ($this->ProjectManager) {
             $parameters .= '&Project_Manager=' . urlencode($this->ProjectManager);
+        }
+
+        if ($this->ProjectManagerEmail) {
+            $parameters .= '&Project_Manager_email=' . urlencode($this->ProjectManagerEmail);
         }
 
         if ($this->ProjectCoordinator) {
