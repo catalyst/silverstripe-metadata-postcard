@@ -322,7 +322,9 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
      */
     public function MetadataEntryForm()
     {
-        $params = $this->getRequest()->getVars();
+        // NIWA are worried about parameter case and would like it case insensitive so convert all get vars to lower
+        // I think this is because they are not 100% what case the parameters from oracle will be in.
+        $params = array_change_key_case($this->getRequest()->getVars(), CASE_LOWER);
 
         // Check in the parameters sent to this page if there are certian fields needed to power the
         // functionality which emails project coordinators and if so get them as we will need to add
@@ -330,20 +332,26 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
         // processing and send the email.
         $hiddenFields = array();
 
-        if (!empty($params['Project_Coordinator'])) {
-            $hiddenFields['_Project_Coordinator'] = $params['Project_Coordinator'];
+        // These 2 fields can be populated either by Project_Coordinator or Project_Administrator as Oracle actually
+        // sends Project_Administrator. NIWA want to keep the field here called coordinator.
+        if (!empty($params['project_coordinator'])) {
+            $hiddenFields['_Project_Coordinator'] = $params['project_coordinator'];
+        } else if (!empty($params['project_administrator'])) {
+            $hiddenFields['_Project_Coordinator'] = $params['project_administrator'];
         }
 
-        if (!empty($params['Project_Coordinator_email'])) {
-            $hiddenFields['_Project_Coordinator_email'] = $params['Project_Coordinator_email'];
+        if (!empty($params['project_coordinator_email'])) {
+            $hiddenFields['_Project_Coordinator_email'] = $params['project_coordinator_email'];
+        } else if (!empty($params['project_administrator_email'])) {
+            $hiddenFields['_Project_Coordinator_email'] = $params['project_administrator_email'];
         }
 
-        if (!empty($params['Project_Manager'])) {
-            $hiddenFields['_Project_Manager'] = $params['Project_Manager'];
+        if (!empty($params['project_manager'])) {
+            $hiddenFields['_Project_Manager'] = $params['project_manager'];
         }
 
-        if (!empty($params['Project_Number'])) {
-            $hiddenFields['_Project_Number'] = $params['Project_Number'];
+        if (!empty($params['project_number'])) {
+            $hiddenFields['_Project_Number'] = $params['project_number'];
         }
 
         // Get the fields defined for this page, exclude the placeholder fields as they are not displayed to the user.
@@ -376,8 +384,8 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
                 // Check if there is a parameter in the GET vars with the corresponding name.
                 $fieldValue = null;
 
-                if (isset($params[$fieldName])) {
-                    $fieldValue = $params[$fieldName];
+                if (isset($params[strtolower($fieldName)])) {
+                    $fieldValue = $params[strtolower($fieldName)];
                 }
 
                 // Define a var for the new field, means no matter the type created
@@ -463,8 +471,8 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
                     ->hideUnless('AdditionalMessage')->isChecked()->end()
             );
 
-            if (isset($params['Project_Manager_email'])) {
-                $emailField->setValue($params['Project_Manager_email']);
+            if (isset($params['project_manager_email'])) {
+                $emailField->setValue($params['project_manager_email']);
             }
 
             $formFields->push(
