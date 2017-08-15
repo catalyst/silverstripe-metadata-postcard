@@ -233,7 +233,7 @@ class MetadataPostcardEntryPage extends Page
             $parameters .= '&Project_Manager=' . urlencode($this->ProjectManager);
         }
 
-        if ($this->ProjectManager) {
+        if ($this->ProjectManagerEmail) {
             $parameters .= '&Project_Manager_email=' . urlencode($this->ProjectManagerEmail);
         }
 
