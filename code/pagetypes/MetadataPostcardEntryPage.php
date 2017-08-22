@@ -631,7 +631,8 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
             $form->sessionMessage($successMessage, 'good', false);
 
             // Also add the link to the newly created record to an array in the session so we can display these on the form.
-            $createdRecords = Session::get('PostcardRecordsCreated');
+            // The links should be page specific which is why it ID is included.
+            $createdRecords = Session::get('PostcardRecordsCreated_' . $this->ID);
 
             // If there are no records already in the current session then call function to check for the hidden fields on
             // the form which provide the information required to email a project coordinator, and if they exist sent an email.
@@ -641,7 +642,7 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
 
             // Add the new reocrd to the created records array and then set back in the session.
             $createdRecords[] = $newRecordLink;
-            Session::set('PostcardRecordsCreated', $createdRecords);
+            Session::set('PostcardRecordsCreated_' . $this->ID, $createdRecords);
 
             // Return the user back to the form. The redirect back will take the user back to the form
             // with the original URL parameters which means the fields with parameters on the URL will be
@@ -726,7 +727,7 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
     }
 
     /**
-     * Returns a list of previously created metadata postcard records from the session
+     * Returns a list of previously created metadata postcard records for this page from the session
      * these are output on the page so the user can see a history of records they have added this session.
      *
      * @return ArrayList
@@ -734,7 +735,7 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
     public function PreviouslyCreatedRecords()
     {
         $createdRecords = new ArrayList();
-        $records = Session::get('PostcardRecordsCreated');
+        $records = Session::get('PostcardRecordsCreated_' . $this->ID);
 
         if ($records) {
             foreach($records as $record) {
