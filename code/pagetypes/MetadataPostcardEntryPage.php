@@ -32,6 +32,7 @@ class MetadataPostcardEntryPage extends Page
         'HelpBoxTitle' => 'Varchar(255)',
         'HelpBoxMessage' => 'HTMLText',
         'BrowseBoxTitle' => 'Varchar(255)',
+        'BrowseLinkLabel' => 'Varchar(255)',
         'BrowseBoxMessage' => 'HTMLText',
         'ProjectName' => 'Varchar(255)',        // These fields are only used for the URL builder
         'ProjectCode' => 'Varchar(255)',        // and are not fields on the form so need a value captured somewhere.
@@ -82,9 +83,10 @@ class MetadataPostcardEntryPage extends Page
                 HtmlEditorField::create('HelpBoxMessage')->setRows(5),
                 // Now the browse box..
                 LiteralField::create('BrowseBoxInstructions', '<p><strong>BROWSE: If you would like a box displayed to the right of the page with a link to the browse page for this catalogue, then please fill out the fields below including which page to link to.</strong></p>'),
-                TreeDropdownField::create('BrowseCataloguePageID', 'Browse Catalogue page', 'SiteTree'),
                 TextField::create('BrowseBoxTitle'),
-                HtmlEditorField::create('BrowseBoxMessage')->setRows(5)
+                HtmlEditorField::create('BrowseBoxMessage')->setRows(5),
+                TreeDropdownField::create('BrowseCataloguePageID', 'Browse Catalogue page', 'SiteTree'),
+                TextField::create('BrowseLinkLabel')->setRightTitle('If you would like to customise the link text, please enter it here.')
             )
         );
 
