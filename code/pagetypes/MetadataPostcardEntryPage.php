@@ -28,6 +28,7 @@ class MetadataPostcardEntryPage extends Page
         'CoordinatorEmailBody' => 'Text',
         'PushSuccessMessage' => 'Text',
         'PushFailureMessage' => 'Text',
+        'DisplayRecordList' => 'Boolean',
         'HelpBoxTitle' => 'Varchar(255)',
         'HelpBoxMessage' => 'HTMLText',
         'BrowseBoxTitle' => 'Varchar(255)',
@@ -104,6 +105,7 @@ class MetadataPostcardEntryPage extends Page
                 EmailField::create('FromEmailAddress')
                     ->setRightTitle('This is the address that email messages from this system appear to be from. It should include the domain of this website.'),
                 NoticeMessage::create('Special variable in the success message is {LINK} which will display a link to the newly created record in the catalogue on the screen.'),
+                CheckboxField::create('DisplayRecordList', 'Display list of records added this session'),
                 TextAreaField::create('PushSuccessMessage'),
                 NoticeMessage::create('Special variable in the failure message is {ERROR} which will display the technical error message on screen.'),
                 TextAreaField::create('PushFailureMessage')
@@ -735,13 +737,17 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
     public function PreviouslyCreatedRecords()
     {
         $createdRecords = new ArrayList();
-        $records = Session::get('PostcardRecordsCreated_' . $this->ID);
 
-        if ($records) {
-            foreach($records as $record) {
-                $createdRecords->push(ArrayData::create(
-                    array('Link' => $record)
-                ));
+        // Only if we are to display the records added this session then get the info for that.
+        if ($this->DisplayRecordList) {
+            $records = Session::get('PostcardRecordsCreated_' . $this->ID);
+
+            if ($records) {
+                foreach($records as $record) {
+                    $createdRecords->push(ArrayData::create(
+                        array('Link' => $record)
+                    ));
+                }
             }
         }
 
