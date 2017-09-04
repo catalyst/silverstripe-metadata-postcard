@@ -37,7 +37,13 @@
                 <div class="sidebox">
                     <h3 style="margin-top:0;">$BrowseBoxTitle</h3>
                     $BrowseBoxMessage
-                    <a href="$BrowseCataloguePage.Link" target="_blank">Browse the catalogue...</a>
+                    <a href="$BrowseCataloguePage.Link" target="_blank">
+                        <% if $BrowseLinkLabel %>
+                            $BrowseLinkLabel
+                        <% else %>
+                            Browse the catalogue...
+                        <% end_if %>
+                    </a>
                 </div>
             <% end_if %>
         </aside>

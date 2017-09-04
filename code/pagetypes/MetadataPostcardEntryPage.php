@@ -28,12 +28,14 @@ class MetadataPostcardEntryPage extends Page
         'CoordinatorEmailBody' => 'Text',
         'PushSuccessMessage' => 'Text',
         'PushFailureMessage' => 'Text',
+        'DisplayRecordList' => 'Boolean',
         'HelpBoxTitle' => 'Varchar(255)',
         'HelpBoxMessage' => 'HTMLText',
         'BrowseBoxTitle' => 'Varchar(255)',
+        'BrowseLinkLabel' => 'Varchar(255)',
         'BrowseBoxMessage' => 'HTMLText',
         'ProjectName' => 'Varchar(255)',        // These fields are only used for the URL builder
-        'ProjectNumber' => 'Varchar(255)',      // and are not fields on the form so need a value captured somewhere.
+        'ProjectCode' => 'Varchar(255)',        // and are not fields on the form so need a value captured somewhere.
         'ProjectManager' => 'Varchar(255)',
         'ProjectManagerEmail' => 'Varchar(255)',
         'ProjectCoordinator' => 'Varchar(255)',
@@ -81,9 +83,10 @@ class MetadataPostcardEntryPage extends Page
                 HtmlEditorField::create('HelpBoxMessage')->setRows(5),
                 // Now the browse box..
                 LiteralField::create('BrowseBoxInstructions', '<p><strong>BROWSE: If you would like a box displayed to the right of the page with a link to the browse page for this catalogue, then please fill out the fields below including which page to link to.</strong></p>'),
-                TreeDropdownField::create('BrowseCataloguePageID', 'Browse Catalogue page', 'SiteTree'),
                 TextField::create('BrowseBoxTitle'),
-                HtmlEditorField::create('BrowseBoxMessage')->setRows(5)
+                HtmlEditorField::create('BrowseBoxMessage')->setRows(5),
+                TreeDropdownField::create('BrowseCataloguePageID', 'Browse Catalogue page', 'SiteTree'),
+                TextField::create('BrowseLinkLabel')->setRightTitle('If you would like to customise the link text, please enter it here.')
             )
         );
 
@@ -104,6 +107,7 @@ class MetadataPostcardEntryPage extends Page
                 EmailField::create('FromEmailAddress')
                     ->setRightTitle('This is the address that email messages from this system appear to be from. It should include the domain of this website.'),
                 NoticeMessage::create('Special variable in the success message is {LINK} which will display a link to the newly created record in the catalogue on the screen.'),
+                CheckboxField::create('DisplayRecordList', 'Display list of records added this session'),
                 TextAreaField::create('PushSuccessMessage'),
                 NoticeMessage::create('Special variable in the failure message is {ERROR} which will display the technical error message on screen.'),
                 TextAreaField::create('PushFailureMessage')
@@ -113,10 +117,10 @@ class MetadataPostcardEntryPage extends Page
         $fields->addFieldsToTab(
             'Root.ProjectCoordinator',
             array(
-                LiteralField::create('CoordinatorNote', "<p><strong>One email is sent to the project coordinator after the first record in a user's session has been pushed to the catalogue, provided that Project_Coordinator, Project_Coordinator_email, Project_Manager, and Project_Number parameters are sent in the URL to this page. If any of these parameters are not provided no email will be sent to the project coordinator.</strong></p>"),
-                NoticeMessage::create("Special variable is {PROJECT_NUMBER} which will be replaced with the project number when the email is sent."),
+                LiteralField::create('CoordinatorNote', "<p><strong>One email is sent to the project coordinator after the first record in a user's session has been pushed to the catalogue, provided that Project_Coordinator, Project_Coordinator_email, Project_Manager, and Project_Code parameters are sent in the URL to this page. If any of these parameters are not provided no email will be sent to the project coordinator.</strong></p>"),
+                NoticeMessage::create("Special variable is {PROJECT_CODE} which will be replaced with the project code when the email is sent."),
                 TextField::create('CoordinatorEmailSubject'),
-                NoticeMessage::create("Special variables are {PROJECT_COORDINATOR} (name), {PROJECT_MANAGER} (name), and {PROJECT_NUMBER} which will be replaced when the email is sent."),
+                NoticeMessage::create("Special variables are {PROJECT_COORDINATOR} (name), {PROJECT_MANAGER} (name), and {PROJECT_CODE} which will be replaced when the email is sent."),
                 TextAreaField::create('CoordinatorEmailBody')->setRows(10)
             )
         );
@@ -172,7 +176,7 @@ class MetadataPostcardEntryPage extends Page
                 LiteralField::create('UrlInstructions', "<p><strong>Only use this tab after for have specified the fields on the form. The purpose of this tab is to help you create a parameterised url to the page.</strong></p>"),
                 NoticeMessage::create('1) Because these parameters are not fields on the form, please enter their URL parameter values here.'),
                 TextField::create('ProjectName'),
-                TextField::create('ProjectNumber'),
+                TextField::create('ProjectCode'),
                 TextField::create('ProjectManager'),
                 TextField::create('ProjectManagerEmail'),
                 TextField::create('ProjectCoordinator'),
@@ -219,14 +223,14 @@ class MetadataPostcardEntryPage extends Page
 
         $parameters = "";
 
-        // If values for the project number, Project Manager, Project Coordinator, or Project Coordinator
+        // If values for the project code, Project Manager, Project Coordinator, or Project Coordinator
         // email fields have been specified include them as parameters in the URL.
         if ($this->ProjectName) {
             $parameters .= '&Project_Name=' . urlencode($this->ProjectName);
         }
 
-        if ($this->ProjectNumber) {
-            $parameters .= '&Project_Number=' . urlencode($this->ProjectNumber);
+        if ($this->ProjectCode) {
+            $parameters .= '&Project_Code=' . urlencode($this->ProjectCode);
         }
 
         if ($this->ProjectManager) {
@@ -350,8 +354,8 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
             $hiddenFields['_Project_Manager'] = $params['project_manager'];
         }
 
-        if (!empty($params['project_number'])) {
-            $hiddenFields['_Project_Number'] = $params['project_number'];
+        if (!empty($params['project_code'])) {
+            $hiddenFields['_Project_Code'] = $params['project_code'];
         }
 
         // Get the fields defined for this page, exclude the placeholder fields as they are not displayed to the user.
@@ -698,18 +702,18 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
      */
     protected function EmailCoordinator($data)
     {
-        $projectNumber = !empty($data['_Project_Number']) ? $data['_Project_Number'] : '';
+        $projectCode = !empty($data['_Project_Code']) ? $data['_Project_Code'] : '';
         $projectCoordinator = !empty($data['_Project_Coordinator']) ? $data['_Project_Coordinator'] : '';
         $projectCoordinatorEmail = !empty($data['_Project_Coordinator_email']) ? $data['_Project_Coordinator_email'] : '';
         $projectManager = !empty($data['_Project_Manager']) ? $data['_Project_Manager'] : '';
 
         // Ensure have all these parameters, if not then we cannot send an email. This if fine as some organisations may not want to do this.
-        if ($projectNumber && $projectCoordinator && $projectCoordinatorEmail && $projectManager) {
+        if ($projectCode && $projectCoordinator && $projectCoordinatorEmail && $projectManager) {
             // Parse special variables in the email subject and body.
-            $subject = str_replace('{PROJECT_NUMBER}', $projectNumber, $this->CoordinatorEmailSubject);
+            $subject = str_replace('{PROJECT_CODE}', $projectCode, $this->CoordinatorEmailSubject);
             $body = str_replace(
-                    array('{PROJECT_NUMBER}', '{PROJECT_COORDINATOR}', '{PROJECT_MANAGER}'),
-                    array($projectNumber, $projectCoordinator, $projectManager),
+                    array('{PROJECT_CODE}', '{PROJECT_COORDINATOR}', '{PROJECT_MANAGER}'),
+                    array($projectCode, $projectCoordinator, $projectManager),
                     $this->CoordinatorEmailBody
             );
 
@@ -735,13 +739,17 @@ class MetadataPostcardEntryPage_Controller extends Page_Controller
     public function PreviouslyCreatedRecords()
     {
         $createdRecords = new ArrayList();
-        $records = Session::get('PostcardRecordsCreated_' . $this->ID);
 
-        if ($records) {
-            foreach($records as $record) {
-                $createdRecords->push(ArrayData::create(
-                    array('Link' => $record)
-                ));
+        // Only if we are to display the records added this session then get the info for that.
+        if ($this->DisplayRecordList) {
+            $records = Session::get('PostcardRecordsCreated_' . $this->ID);
+
+            if ($records) {
+                foreach($records as $record) {
+                    $createdRecords->push(ArrayData::create(
+                        array('Link' => $record)
+                    ));
+                }
             }
         }
 
