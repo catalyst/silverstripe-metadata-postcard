@@ -41,7 +41,8 @@ class MetadataPushApi
         $identifier = null;
 
         // Set up the headers, according to the CSW this is XML.
-        $headers = array('Content-Type: application/xml');
+        // Also it appears that the newer version of geocatalogue needs the user agent set.
+        $headers = array('Content-Type: application/xml', 'User-Agent: Metadata-postcard-entry');
 
         // Put together the data to send, this must be XML.
         // These starting tags are from this CSW docs...
