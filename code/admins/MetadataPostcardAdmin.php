@@ -1,5 +1,10 @@
 <?php
-
+/**
+ * Admin for the metadata postcard module. Allows Dublin Core fields to be added or altered.
+ *
+ * @author Catalyst I.T. SilverStripe Team 2017 <silverstripedev@catalyst.net.nz>
+ * @package niwa.metadata.postcards
+ */
 class MetadataPostcardAdmin extends ModelAdmin
 {
     /**

@@ -2,9 +2,7 @@
     <div class="<% if $HelpBoxTitle || $AddBoxTitle %>span9<% else %>span12<% end_if %>">
         <% include Breadcrumbs %>
         <div id="main" role="main">
-
             <h1 class="catalogueSearchTitle page-header">$Title</h1>
-
             <% if $Content %>
                 <div class="catalogueContent">
                     $Content.RichLinks
@@ -30,12 +28,10 @@
                 <% end_if %>
 
                 <% if $records %>
-
                     <!-- Top pagination -->
                     <div class='cataloguePagination'>
                         <% include CataloguePagination %>
                     </div>
-
                     <!-- Then the search / browse results -->
                     <div class='catalogueResults'>
                         <% loop $records %>

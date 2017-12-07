@@ -1,8 +1,6 @@
 <?php
 /**
- * Class to encapsulate the code to send / push records to the geocatalogue via
- * the CSW api end point. Uses my own CURL function as the ResfulServer in SilverStripe
- * does something incorrectly which results in Java errors coming back.
+ * Class to encapsulate the code to send / push records to the geocatalogue via the CSW api end point.
  *
  * @author Catalyst I.T. SilverStripe Team 2017 <silverstripedev@catalyst.net.nz>
  * @package niwa.metadata.postcards
