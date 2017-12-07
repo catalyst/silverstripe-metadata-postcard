@@ -1,7 +1,5 @@
 ## Browse Catalogue page user guide
 
-![browse page](images/browse-page-fe.png)
-
 To create a page allowing users to browse Dublin Core or ISO records in a catalogue, follow these steps...
 
 * Log in the SilverStripe CMS
