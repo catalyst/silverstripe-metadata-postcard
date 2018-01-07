@@ -1,8 +1,8 @@
 {
-    "name": "silverstripe/metadata-postcard-entry",
-    "description": "Geocatalogue Metadata Postcard Entry Page",
+    "name": "catalyst/silverstripe-metadata-postcard",
+    "description": "Geocatalogue Metadata Postcard Entry",
     "type": "silverstripe-module",
-    "homepage": "https://git.catalyst-au.net/silverstripe/metadata-postcard-entry",
+    "homepage": "https://github.com/catalyst/silverstripe-metadata-postcard",
     "require": {
         "composer/installers": "~1.0",
         "php": ">=5.5.9,<7.0.0",
@@ -14,7 +14,7 @@
         "process-timeout": 600
     },
     "extra": {
-        "installer-name": "metadata-postcard-entry"
+        "installer-name": "silverstripe-metadata-postcard"
     },
     "prefer-stable": true,
     "minimum-stability": "dev"
