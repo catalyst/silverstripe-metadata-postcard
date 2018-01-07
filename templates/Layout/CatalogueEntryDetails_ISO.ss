@@ -7,7 +7,6 @@
             <% else_if $fileIdentifier %>
                 <h2>$MDTitle</h2>
                 <div class="result">
-
                     <div class="catalogueBtns">
                         <% if $CIOnlineResources %>
                             <% loop $CIOnlineResources %>
@@ -22,7 +21,6 @@
                         <% end_if %>
                         <a class="catalogueBtn" href="{$Top.Link}xml/?id=$fileIdentifier" rel="noreferrer" target="_blank">Download Metadata XML</a>
                     </div>
-
                     <table class="catalougeTable">
                         <% loop $MDCitationDates %>
                         <tr>

@@ -11,8 +11,9 @@ This module was developed by Catalyst IT for NIWA.
 ### Requirements
 
  * SilverStripe CMS and Framework 3.1+ (works with CWP as well)
- * fiendsofsilverstripe/backendmessages ^1.0
+ * friendsofsilverstripe/backendmessages ^1.0
  * unclecheese/display-logic ^1.5
+ * sheadawson/silverstripe-zenvalidator ^0.5.1
 
 
 ### Installation
@@ -51,3 +52,11 @@ There are many features of this module which include...
 ### Usage
 
 Please refer to the detailed [User Guide](docs/en/index.md) for how to use this module.
+
+### Credits
+
+Portions of the code in this module are from the silverstripe-geocatalogue module created by Rainer Spittel.
+
+### Maintainers
+
+The Catalyst IT SilverStripe team.

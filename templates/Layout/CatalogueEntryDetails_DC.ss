@@ -7,11 +7,9 @@
             <% else_if $MDTitle %>
                 <h2>$MDTitle</h2>
                 <div class="result">
-
                     <div class="catalogueBtns">
                         <a class="catalogueBtn" href="{$Top.Link('xml')}?id=$MDIdentifier" rel="noreferrer" target="_blank">Download Metadata XML</a>
                     </div>
-
                     <table class="catalougeTable">
                         <% loop $Rows %>
                             <tr>
